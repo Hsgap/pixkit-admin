@@ -12,19 +12,14 @@
 
   const PixKitRemote = {
     state: null,
-    platform: 'web', // 'web' | 'mobile_android' | 'mobile_ios' | 'tablet' | 'desktop_pc'
+    platform: 'web', // 'web' | 'mobile'
     configUrl: DEFAULT_CONFIG_URL,
     listeners: [],
 
     detectPlatform: function () {
       if (window.Capacitor) {
-        const plat = window.Capacitor.getPlatform();
-        if (plat === 'android') return 'mobile_android';
-        if (plat === 'ios') return 'mobile_ios';
-        return 'mobile_android';
+        return 'mobile';
       }
-      if (window.innerWidth <= 768) return 'mobile_android';
-      if (window.innerWidth <= 1024) return 'tablet';
       return 'web';
     },
 

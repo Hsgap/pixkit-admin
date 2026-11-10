@@ -126,7 +126,7 @@
           <div class="fleet-status-pill operational" id="fleetStatusPill">
             <span class="pulse-dot"></span> ALL FLEET OPERATIONAL
           </div>
-          <span style="font-size: 12.5px; color: var(--admin-muted);">Controlling <strong>5 Client Apps</strong> (Web, Mobile, Tablet, PC)</span>
+          <span style="font-size: 12.5px; color: var(--admin-muted);">Controlling <strong>2 Ready Client Builds</strong> (Web Studio &amp; Mobile App)</span>
         </div>
 
         <div class="topbar-right">
@@ -174,7 +174,7 @@
           </div>
 
           <!-- Per-Platform Selective Toggles -->
-          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Individual Platform Switches</h3>
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Active Ready Platforms</h3>
           <div class="platform-cards-grid">
             
             <!-- Web Studio -->
@@ -184,7 +184,7 @@
                   <span class="platform-icon">&#127760;</span>
                   <div>
                     <h4>Web Studio</h4>
-                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit/ (Desktop &amp; Mobile Web)</span>
+                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit/ (Live Desktop &amp; Mobile Web)</span>
                   </div>
                 </div>
                 <label class="switch-box mini-switch">
@@ -198,87 +198,24 @@
               </div>
             </div>
 
-            <!-- Mobile Android -->
-            <div class="platform-card">
-              <div class="platform-card-header">
-                <div class="platform-info">
-                  <span class="platform-icon">&#129302;</span>
-                  <div>
-                    <h4>Mobile Android</h4>
-                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit-mobile/ (Capacitor/APK)</span>
-                  </div>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="plat-toggle-mobile_android" checked onchange="togglePlatformStatus('mobile_android', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size: 12px; color: var(--admin-muted);">Status</span>
-                <span class="platform-status-tag status-live" id="plat-tag-mobile_android">Live &amp; Healthy</span>
-              </div>
-            </div>
-
-            <!-- Mobile iOS -->
-            <div class="platform-card">
-              <div class="platform-card-header">
-                <div class="platform-info">
-                  <span class="platform-icon">&#63743;</span>
-                  <div>
-                    <h4>Mobile iOS</h4>
-                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit-mobile/ (iOS Bundle)</span>
-                  </div>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="plat-toggle-mobile_ios" checked onchange="togglePlatformStatus('mobile_ios', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size: 12px; color: var(--admin-muted);">Status</span>
-                <span class="platform-status-tag status-live" id="plat-tag-mobile_ios">Live &amp; Healthy</span>
-              </div>
-            </div>
-
-            <!-- Tablet Edition -->
+            <!-- Mobile App -->
             <div class="platform-card">
               <div class="platform-card-header">
                 <div class="platform-info">
                   <span class="platform-icon">&#128241;</span>
                   <div>
-                    <h4>Tablet Edition</h4>
-                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit-tablet/ (iPad &amp; Android Tab)</span>
+                    <h4>Mobile App</h4>
+                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit-mobile/ (Android APK &amp; iOS)</span>
                   </div>
                 </div>
                 <label class="switch-box mini-switch">
-                  <input type="checkbox" id="plat-toggle-tablet" checked onchange="togglePlatformStatus('tablet', this.checked)">
+                  <input type="checkbox" id="plat-toggle-mobile" checked onchange="togglePlatformStatus('mobile', this.checked)">
                   <span class="slider-round"></span>
                 </label>
               </div>
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size: 12px; color: var(--admin-muted);">Status</span>
-                <span class="platform-status-tag status-live" id="plat-tag-tablet">Live &amp; Healthy</span>
-              </div>
-            </div>
-
-            <!-- Desktop PC -->
-            <div class="platform-card">
-              <div class="platform-card-header">
-                <div class="platform-info">
-                  <span class="platform-icon">&#128187;</span>
-                  <div>
-                    <h4>Desktop PC</h4>
-                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit-pc/ (Windows/Mac/Linux)</span>
-                  </div>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="plat-toggle-desktop_pc" checked onchange="togglePlatformStatus('desktop_pc', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size: 12px; color: var(--admin-muted);">Status</span>
-                <span class="platform-status-tag status-live" id="plat-tag-desktop_pc">Live &amp; Healthy</span>
+                <span class="platform-status-tag status-live" id="plat-tag-mobile">Live &amp; Healthy</span>
               </div>
             </div>
 

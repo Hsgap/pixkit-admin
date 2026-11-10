@@ -256,7 +256,7 @@
       system: { version: '1.0.0', lastUpdated: new Date().toISOString() },
       maintenance: {
         global: false,
-        platforms: { web: false, mobile_android: false, mobile_ios: false, tablet: false, desktop_pc: false },
+        platforms: { web: false, mobile: false },
         message: {
           headline: 'PixKit is undergoing scheduled maintenance',
           body: 'Our studio is undergoing a quick engine upgrade. All local browser files remain 100% safe. Back shortly!',
@@ -311,9 +311,9 @@
       }
     }
 
-    // 3. Platform Toggles
+    // 3. Platform Toggles (Active Ready Builds: Web Studio & Mobile App)
     const plats = ecosystemState.maintenance.platforms || {};
-    ['web', 'mobile_android', 'mobile_ios', 'tablet', 'desktop_pc'].forEach(plat => {
+    ['web', 'mobile'].forEach(plat => {
       const toggle = document.getElementById('plat-toggle-' + plat);
       const tag = document.getElementById('plat-tag-' + plat);
       const isDown = isGlobalShutdown || plats[plat];

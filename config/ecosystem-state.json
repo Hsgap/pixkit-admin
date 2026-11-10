@@ -8,10 +8,7 @@
     "global": false,
     "platforms": {
       "web": false,
-      "mobile_android": false,
-      "mobile_ios": false,
-      "tablet": false,
-      "desktop_pc": false
+      "mobile": false
     },
     "message": {
       "headline": "PixKit is undergoing scheduled maintenance",
