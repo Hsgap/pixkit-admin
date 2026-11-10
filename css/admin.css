@@ -1,0 +1,767 @@
+/* ==========================================================================
+   PixKit Fleet HQ — Executive Admin Command Center Stylesheet
+   Pure Dark/Light System, Electric Lime Accents, Glassmorphic Dashboard Cards
+   ========================================================================== */
+
+:root {
+  --admin-bg: #0C0E0B;
+  --admin-surface: #141712;
+  --admin-card: #1B1E18;
+  --admin-card-hover: #22261E;
+  --admin-border: #282C22;
+  --admin-border-focus: #3F4535;
+  --admin-ink: #F4F6EE;
+  --admin-muted: #8E9284;
+  --admin-lime: #D7F36A;
+  --admin-lime-hover: #CEEE59;
+  --admin-lime-dim: rgba(215, 243, 106, 0.12);
+  --admin-red: #EF4444;
+  --admin-red-dim: rgba(239, 68, 68, 0.14);
+  --admin-amber: #F59E0B;
+  --admin-amber-dim: rgba(245, 158, 11, 0.14);
+  --admin-blue: #3B82F6;
+  --admin-blue-dim: rgba(59, 130, 246, 0.14);
+  --admin-emerald: #10B981;
+  --admin-emerald-dim: rgba(16, 185, 129, 0.14);
+
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  --shadow-card: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="light"] {
+  --admin-bg: #F8F9F3;
+  --admin-surface: #FFFFFF;
+  --admin-card: #FFFFFF;
+  --admin-card-hover: #F2F5EA;
+  --admin-border: #E2E6D8;
+  --admin-border-focus: #B8C2A5;
+  --admin-ink: #1C2018;
+  --admin-muted: #6B7262;
+  --admin-lime: #7E9E15;
+  --admin-lime-hover: #6F8B12;
+  --admin-lime-dim: rgba(126, 158, 21, 0.12);
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--admin-bg);
+  color: var(--admin-ink);
+  font-family: var(--font-display);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ==========================================================================
+   Admin Shell & Sidebar Navigation
+   ========================================================================== */
+.admin-shell {
+  display: flex;
+  width: 100vw;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 260px;
+  background: var(--admin-surface);
+  border-right: 1px solid var(--admin-border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 18px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px 24px;
+  border-bottom: 1px solid var(--admin-border);
+  margin-bottom: 24px;
+}
+
+.brand-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--admin-lime);
+  color: #121310;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.brand-titles h1 {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--admin-lime-dim);
+  color: var(--admin-lime);
+  letter-spacing: 0.05em;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.nav-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--admin-muted);
+  letter-spacing: 0.08em;
+  padding: 12px 10px 4px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--admin-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-link:hover {
+  color: var(--admin-ink);
+  background: var(--admin-card);
+}
+
+.nav-link.active {
+  color: #121310;
+  background: var(--admin-lime);
+  font-weight: 800;
+}
+
+[data-theme="light"] .nav-link.active {
+  color: #FFFFFF;
+}
+
+.sidebar-footer {
+  padding-top: 18px;
+  border-top: 1px solid var(--admin-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-lock-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: var(--admin-red-dim);
+  color: var(--admin-red);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.admin-lock-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+/* ==========================================================================
+   Main Content Area & Topbar
+   ========================================================================== */
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.admin-topbar {
+  height: 72px;
+  background: var(--admin-surface);
+  border-bottom: 1px solid var(--admin-border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fleet-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.fleet-status-pill.operational {
+  background: var(--admin-emerald-dim);
+  color: var(--admin-emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.fleet-status-pill.maintenance {
+  background: var(--admin-red-dim);
+  color: var(--admin-red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+  animation: pulseAnimation 2s infinite;
+}
+
+@keyframes pulseAnimation {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.save-sync-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: var(--radius-md);
+  background: var(--admin-lime);
+  color: #121310;
+  border: none;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-sync-btn:hover {
+  background: var(--admin-lime-hover);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Dashboard Container & Views
+   ========================================================================== */
+.admin-container {
+  padding: 32px;
+  max-width: 1300px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.tab-view {
+  display: none;
+}
+
+.tab-view.active {
+  display: block;
+  animation: fadeInView 0.25s ease;
+}
+
+@keyframes fadeInView {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.view-header {
+  margin-bottom: 28px;
+}
+
+.view-header h2 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.view-header p {
+  font-size: 13.5px;
+  color: var(--admin-muted);
+}
+
+/* ==========================================================================
+   Master Kill Switch Hero Card
+   ========================================================================== */
+.hero-kill-card {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-kill-card.is-active-shutdown {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), var(--admin-card));
+}
+
+.kill-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.kill-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--admin-red-dim);
+  color: var(--admin-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kill-text h3 {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.kill-text p {
+  font-size: 13px;
+  color: var(--admin-muted);
+  max-width: 560px;
+}
+
+/* Big Custom Toggle Switch */
+.switch-box {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 32px;
+}
+
+.switch-box input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider-round {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--admin-border-focus);
+  transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 34px;
+}
+
+.slider-round:before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 50%;
+}
+
+input:checked + .slider-round {
+  background-color: var(--admin-red);
+}
+
+input:checked + .slider-round:before {
+  transform: translateX(28px);
+}
+
+/* ==========================================================================
+   Fleet Platform Cards Grid
+   ========================================================================== */
+.platform-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  margin-bottom: 32px;
+}
+
+.platform-card {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.platform-card:hover {
+  border-color: var(--admin-border-focus);
+  transform: translateY(-2px);
+}
+
+.platform-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.platform-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.platform-icon {
+  font-size: 20px;
+  color: var(--admin-lime);
+}
+
+.platform-info h4 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.platform-status-tag {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+
+.status-live {
+  background: var(--admin-emerald-dim);
+  color: var(--admin-emerald);
+}
+
+.status-down {
+  background: var(--admin-red-dim);
+  color: var(--admin-red);
+}
+
+/* ==========================================================================
+   Feature Flags Grid
+   ========================================================================== */
+.flags-category-box {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.flags-category-box h3 {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flags-items-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.flag-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+}
+
+.flag-label-col h5 {
+  font-size: 13.5px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.flag-label-col p {
+  font-size: 11.5px;
+  color: var(--admin-muted);
+}
+
+/* Mini Switch */
+.mini-switch {
+  width: 44px;
+  height: 24px;
+}
+
+.mini-switch .slider-round:before {
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+}
+
+.mini-switch input:checked + .slider-round {
+  background-color: var(--admin-lime);
+}
+
+.mini-switch input:checked + .slider-round:before {
+  transform: translateX(20px);
+}
+
+/* ==========================================================================
+   Leaderboard & Supporter Management Table
+   ========================================================================== */
+.metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+}
+
+.metric-card h6 {
+  font-size: 11.5px;
+  color: var(--admin-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.metric-val {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--admin-lime);
+}
+
+.admin-table-wrap {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.table-action-bar {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--admin-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.table-search-input {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  color: var(--admin-ink);
+  font-size: 13px;
+  min-width: 260px;
+  outline: none;
+}
+
+.table-search-input:focus {
+  border-color: var(--admin-lime);
+}
+
+.admin-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.admin-data-table th {
+  background: var(--admin-surface);
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-data-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-ink);
+}
+
+.admin-data-table tr:hover td {
+  background: var(--admin-card-hover);
+}
+
+.table-btn {
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+}
+
+.table-btn.danger {
+  color: var(--admin-red);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.table-btn.danger:hover {
+  background: var(--admin-red-dim);
+}
+
+/* ==========================================================================
+   Security PIN Lock Screen Overlay
+   ========================================================================== */
+.admin-lock-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  background: #090B08;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.admin-lock-box {
+  max-width: 380px;
+  width: 100%;
+  background: #141712;
+  border: 1px solid #282C22;
+  border-radius: var(--radius-lg);
+  padding: 36px 30px;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+}
+
+.lock-logo-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--admin-lime);
+  color: #121310;
+  font-weight: 900;
+  font-size: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.pin-display-dots {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 24px 0 28px;
+}
+
+.pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #3F4535;
+  transition: all 0.2s ease;
+}
+
+.pin-dot.filled {
+  background: var(--admin-lime);
+  border-color: var(--admin-lime);
+  box-shadow: 0 0 10px rgba(215, 243, 106, 0.5);
+}
+
+.pin-numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.numpad-btn {
+  height: 54px;
+  background: #1D211A;
+  border: 1px solid #2E3326;
+  border-radius: var(--radius-md);
+  color: #F4F6EE;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.numpad-btn:hover {
+  background: #282D22;
+  border-color: #4A523E;
+}
+
+.numpad-btn:active {
+  transform: scale(0.96);
+}
+

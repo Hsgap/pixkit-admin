@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PixKit Fleet HQ — Master Admin Command Center</title>
+  <meta name="description" content="Central Fleet Management & Kill Switch Dashboard for PixKit Web, Mobile, Tablet, and Desktop.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23D7F36A'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- Security PIN Lock Screen -->
+  <div class="admin-lock-screen" id="adminLockScreen">
+    <div class="admin-lock-box">
+      <div class="lock-logo-badge">PK</div>
+      <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">PixKit Fleet HQ</h2>
+      <p style="font-size: 13px; color: var(--admin-muted);">Enter 4-digit master PIN to unlock command center</p>
+      
+      <div class="pin-display-dots">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+      </div>
+
+      <div class="pin-numpad">
+        <button class="numpad-btn" onclick="handleNumpadPress('1')">1</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('2')">2</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('3')">3</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('4')">4</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('5')">5</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('6')">6</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('7')">7</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('8')">8</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('9')">9</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('C')" style="font-size: 15px; color: var(--admin-muted);">CLR</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('0')">0</button>
+        <button class="numpad-btn" onclick="handleNumpadPress('DEL')" style="font-size: 15px; color: var(--admin-muted);">&#9003;</button>
+      </div>
+
+      <div style="font-size: 11.5px; color: var(--admin-muted); opacity: 0.8;">
+        Default access PIN: <strong style="color: var(--admin-lime);">7492</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Main Application Shell -->
+  <div class="admin-shell">
+    
+    <!-- Left Navigation Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon-box">PK</div>
+        <div class="brand-titles">
+          <h1>PixKit HQ</h1>
+          <span class="brand-badge">Command Center</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <span class="nav-section-title">Fleet Control</span>
+        <button type="button" class="nav-link active" onclick="switchTab('fleet', this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Fleet &amp; Kill Switches</span>
+        </button>
+
+        <button type="button" class="nav-link" onclick="switchTab('flags', this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          <span>Feature Flags</span>
+        </button>
+
+        <span class="nav-section-title">Operations &amp; Community</span>
+        <button type="button" class="nav-link" onclick="switchTab('leaderboard', this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-2.34"/><path d="M14 14.66V17c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2.34"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          <span>Supporters &amp; Finance</span>
+        </button>
+
+        <button type="button" class="nav-link" onclick="switchTab('broadcast', this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+          <span>Broadcast Alerts</span>
+        </button>
+
+        <button type="button" class="nav-link" onclick="switchTab('versions', this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>App Versions</span>
+        </button>
+
+        <span class="nav-section-title">System</span>
+        <button type="button" class="nav-link" onclick="switchTab('settings', this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>SDK &amp; Security</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button type="button" class="admin-lock-btn" onclick="lockAdminSession()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Lock Session</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Workspace -->
+    <main class="admin-main">
+      
+      <!-- Topbar Header -->
+      <header class="admin-topbar">
+        <div class="topbar-left">
+          <div class="fleet-status-pill operational" id="fleetStatusPill">
+            <span class="pulse-dot"></span> ALL FLEET OPERATIONAL
+          </div>
+          <span style="font-size: 12.5px; color: var(--admin-muted);">Controlling <strong>5 Client Apps</strong> (Web, Mobile, Tablet, PC)</span>
+        </div>
+
+        <div class="topbar-right">
+          <button type="button" class="save-sync-btn" onclick="saveEcosystemState()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <span>Sync Live Changes</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard Container -->
+      <div class="admin-container">
+
+        <!-- ================================================================= -->
+        <!-- TAB 1: FLEET & KILL SWITCHES -->
+        <!-- ================================================================= -->
+        <section class="tab-view active" id="tab-fleet">
+          <div class="view-header">
+            <h2>Fleet Kill Switch &amp; Emergency Mode</h2>
+            <p>Instantly shut down or restore live access across all PixKit clients without touching code.</p>
+          </div>
+
+          <!-- Hero Master Kill Switch -->
+          <div class="hero-kill-card" id="heroKillCard">
+            <div class="kill-left">
+              <div class="kill-icon-wrap">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+              </div>
+              <div class="kill-text">
+                <h3>Global Fleet Kill Switch (Emergency Shutdown)</h3>
+                <p>When toggled ON, every client app immediately enters maintenance mode. A polite maintenance overlay replaces the UI with your custom message.</p>
+              </div>
+            </div>
+            <div>
+              <label class="switch-box">
+                <input type="checkbox" id="masterKillToggle" onchange="toggleMasterKillSwitch(this.checked)">
+                <span class="slider-round"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Per-Platform Selective Toggles -->
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">Individual Platform Switches</h3>
+          <div class="platform-cards-grid">
+            
+            <!-- Web Studio -->
+            <div class="platform-card">
+              <div class="platform-card-header">
+                <div class="platform-info">
+                  <span class="platform-icon">&#127760;</span>
+                  <div>
+                    <h4>Web Studio</h4>
+                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit/ (Desktop &amp; Mobile Web)</span>
+                  </div>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="plat-toggle-web" checked onchange="togglePlatformStatus('web', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size: 12px; color: var(--admin-muted);">Status</span>
+                <span class="platform-status-tag status-live" id="plat-tag-web">Live &amp; Healthy</span>
+              </div>
+            </div>
+
+            <!-- Mobile Android -->
+            <div class="platform-card">
+              <div class="platform-card-header">
+                <div class="platform-info">
+                  <span class="platform-icon">&#129302;</span>
+                  <div>
+                    <h4>Mobile Android</h4>
+                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit-mobile/ (Capacitor/APK)</span>
+                  </div>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="plat-toggle-mobile_android" checked onchange="togglePlatformStatus('mobile_android', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size: 12px; color: var(--admin-muted);">Status</span>
+                <span class="platform-status-tag status-live" id="plat-tag-mobile_android">Live &amp; Healthy</span>
+              </div>
+            </div>
+
+            <!-- Mobile iOS -->
+            <div class="platform-card">
+              <div class="platform-card-header">
+                <div class="platform-info">
+                  <span class="platform-icon">&#63743;</span>
+                  <div>
+                    <h4>Mobile iOS</h4>
+                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit-mobile/ (iOS Bundle)</span>
+                  </div>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="plat-toggle-mobile_ios" checked onchange="togglePlatformStatus('mobile_ios', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size: 12px; color: var(--admin-muted);">Status</span>
+                <span class="platform-status-tag status-live" id="plat-tag-mobile_ios">Live &amp; Healthy</span>
+              </div>
+            </div>
+
+            <!-- Tablet Edition -->
+            <div class="platform-card">
+              <div class="platform-card-header">
+                <div class="platform-info">
+                  <span class="platform-icon">&#128241;</span>
+                  <div>
+                    <h4>Tablet Edition</h4>
+                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit-tablet/ (iPad &amp; Android Tab)</span>
+                  </div>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="plat-toggle-tablet" checked onchange="togglePlatformStatus('tablet', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size: 12px; color: var(--admin-muted);">Status</span>
+                <span class="platform-status-tag status-live" id="plat-tag-tablet">Live &amp; Healthy</span>
+              </div>
+            </div>
+
+            <!-- Desktop PC -->
+            <div class="platform-card">
+              <div class="platform-card-header">
+                <div class="platform-info">
+                  <span class="platform-icon">&#128187;</span>
+                  <div>
+                    <h4>Desktop PC</h4>
+                    <span style="font-size: 11px; color: var(--admin-muted);">pixkit-pc/ (Windows/Mac/Linux)</span>
+                  </div>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="plat-toggle-desktop_pc" checked onchange="togglePlatformStatus('desktop_pc', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size: 12px; color: var(--admin-muted);">Status</span>
+                <span class="platform-status-tag status-live" id="plat-tag-desktop_pc">Live &amp; Healthy</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Maintenance Message Composer -->
+          <div class="flags-category-box">
+            <h3>&#9998; Maintenance Message Customizer (What Users See)</h3>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Headline</label>
+                <input type="text" id="maintHeadlineInput" class="table-search-input" style="width: 100%;" onchange="updateMaintenanceMessage()">
+              </div>
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Explanation Body Message</label>
+                <textarea id="maintBodyInput" class="table-search-input" style="width: 100%; height: 80px; resize: vertical;" onchange="updateMaintenanceMessage()"></textarea>
+              </div>
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Estimated Uptime / Return</label>
+                <input type="text" id="maintUptimeInput" class="table-search-input" style="width: 280px;" onchange="updateMaintenanceMessage()">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 2: GRANULAR FEATURE FLAGS -->
+        <!-- ================================================================= -->
+        <section class="tab-view" id="tab-flags">
+          <div class="view-header">
+            <h2>Granular Feature Flags</h2>
+            <p>Selectively disable or enable individual tools without taking down the rest of the studio.</p>
+          </div>
+
+          <!-- Image Edit Tools -->
+          <div class="flags-category-box">
+            <h3>&#127912; Image Edit Tools</h3>
+            <div class="flags-items-list">
+              <div class="flag-row">
+                <div class="flag-label-col">
+                  <h5>Adjust Tones</h5>
+                  <p>Brightness, Contrast, Saturation</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="flag-editTools-adjust" checked onchange="toggleFeatureFlag('editTools', 'adjust', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+
+              <div class="flag-row">
+                <div class="flag-label-col">
+                  <h5>Preset Filters</h5>
+                  <p>Mono, Warm, Cool, Vintage</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="flag-editTools-filters" checked onchange="toggleFeatureFlag('editTools', 'filters', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+
+              <div class="flag-row">
+                <div class="flag-label-col">
+                  <h5>Crop &amp; Aspect Ratio</h5>
+                  <p>Freeform &amp; Preset Ratios</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="flag-editTools-crop" checked onchange="toggleFeatureFlag('editTools', 'crop', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+
+              <div class="flag-row">
+                <div class="flag-label-col">
+                  <h5>Resize &amp; Dimensions</h5>
+                  <p>Pixel Width &amp; Height scaling</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="flag-editTools-resize" checked onchange="toggleFeatureFlag('editTools', 'resize', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Convert Tools -->
+          <div class="flags-category-box">
+            <h3>&#128260; Format Conversion Tools</h3>
+            <div class="flags-items-list">
+              <div class="flag-row">
+                <div class="flag-label-col">
+                  <h5>HEIC to JPG Converter</h5>
+                  <p>Apple HEIC/HEIF client decoding</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="flag-convertTools-heicToJpg" checked onchange="toggleFeatureFlag('convertTools', 'heicToJpg', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+
+              <div class="flag-row">
+                <div class="flag-label-col">
+                  <h5>SVG to PNG Converter</h5>
+                  <p>Vector to raster client rendering</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="flag-convertTools-svgToPng" checked onchange="toggleFeatureFlag('convertTools', 'svgToPng', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+
+              <div class="flag-row">
+                <div class="flag-label-col">
+                  <h5>Image to PDF</h5>
+                  <p>Bundles images into PDF pages</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="flag-convertTools-imageToPdf" checked onchange="toggleFeatureFlag('convertTools', 'imageToPdf', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- PDF Document Suite -->
+          <div class="flags-category-box">
+            <h3>&#128196; PDF Document Tools</h3>
+            <div class="flags-items-list">
+              <div class="flag-row">
+                <div class="flag-label-col">
+                  <h5>Merge PDF Files</h5>
+                  <p>Client-side PDF-Lib concatenation</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="flag-pdfTools-mergePdf" checked onchange="toggleFeatureFlag('pdfTools', 'mergePdf', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+
+              <div class="flag-row">
+                <div class="flag-label-col">
+                  <h5>Split PDF Files</h5>
+                  <p>Extract single or range pages</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="flag-pdfTools-splitPdf" checked onchange="toggleFeatureFlag('pdfTools', 'splitPdf', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+
+              <div class="flag-row">
+                <div class="flag-label-col">
+                  <h5>Compress PDF</h5>
+                  <p>DPI reduction &amp; image resampling</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="flag-pdfTools-compressPdf" checked onchange="toggleFeatureFlag('pdfTools', 'compressPdf', this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 3: SUPPORTER MODERATION & FINANCE -->
+        <!-- ================================================================= -->
+        <section class="tab-view" id="tab-leaderboard">
+          <div class="view-header">
+            <h2>Supporters &amp; Community Moderation</h2>
+            <p>Monitor total collections, review contributor submissions, hide spam names, or add manual sponsors.</p>
+          </div>
+
+          <!-- Metrics Strip -->
+          <div class="metrics-strip">
+            <div class="metric-card">
+              <h6>Total Collection</h6>
+              <div class="metric-val" id="metricTotalCollection">$0.00</div>
+            </div>
+            <div class="metric-card">
+              <h6>Active Backers</h6>
+              <div class="metric-val" id="metricSupportersCount">0</div>
+            </div>
+            <div class="metric-card">
+              <h6>Public Leaderboard Status</h6>
+              <div class="metric-val" style="font-size: 18px; color: var(--admin-emerald); padding-top: 8px;">Active &amp; Visible</div>
+            </div>
+          </div>
+
+          <!-- Supporters Table -->
+          <div class="admin-table-wrap">
+            <div class="table-action-bar">
+              <input type="text" id="supporterSearchInput" class="table-search-input" placeholder="Search by supporter name or message..." oninput="filterSupportersTable()">
+              <div style="display:flex; gap:10px;">
+                <button type="button" class="table-btn" onclick="addManualSupporter()">+ Add Manual Sponsor</button>
+                <button type="button" class="table-btn" onclick="exportSupportersCSV()">Export CSV</button>
+              </div>
+            </div>
+
+            <table class="admin-data-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Supporter &amp; Note</th>
+                  <th>Amount</th>
+                  <th>Badge Tier</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="supportersTableBody">
+                <!-- Populated dynamically by admin-core.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 4: BROADCAST ALERTS -->
+        <!-- ================================================================= -->
+        <section class="tab-view" id="tab-broadcast">
+          <div class="view-header">
+            <h2>Global In-App Broadcast Alerts</h2>
+            <p>Push an instant high-priority banner notification to all connected Web &amp; Mobile users.</p>
+          </div>
+
+          <div class="flags-category-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+              <h3>Broadcast Status (Active / Inactive)</h3>
+              <label class="switch-box mini-switch">
+                <input type="checkbox" id="broadcastToggle" onchange="updateBroadcast()">
+                <span class="slider-round"></span>
+              </label>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Notice Headline</label>
+                <input type="text" id="broadcastHeadline" class="table-search-input" style="width: 100%;" placeholder="e.g. Server Maintenance Tonight" onchange="updateBroadcast()">
+              </div>
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Message Body</label>
+                <textarea id="broadcastMessage" class="table-search-input" style="width: 100%; height: 70px; resize: vertical;" placeholder="Detailed alert message..." onchange="updateBroadcast()"></textarea>
+              </div>
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Action Button Link (Optional)</label>
+                <input type="text" id="broadcastUrl" class="table-search-input" style="width: 100%;" placeholder="https://..." onchange="updateBroadcast()">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 5: APP VERSION ENFORCEMENT -->
+        <!-- ================================================================= -->
+        <section class="tab-view" id="tab-versions">
+          <div class="view-header">
+            <h2>App Version Control &amp; Force Update</h2>
+            <p>Ensure Android &amp; iOS app users are on compatible versions to prevent crashes from outdated APIs.</p>
+          </div>
+
+          <div class="flags-category-box">
+            <h3>&#128241; Mobile App (Android / iOS)</h3>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 14px;">
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Minimum Required Version</label>
+                <input type="text" id="mobileMinVersion" class="table-search-input" style="width: 100%;" placeholder="1.0.0" onchange="updateVersionControl()">
+              </div>
+              <div>
+                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Latest Available Version</label>
+                <input type="text" id="mobileLatestVersion" class="table-search-input" style="width: 100%;" placeholder="1.2.0" onchange="updateVersionControl()">
+              </div>
+              <div style="display:flex; flex-direction:column; justify-content:center;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); margin-bottom: 6px;">Block Outdated Versions (Force Update)</label>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="mobileForceUpdate" onchange="updateVersionControl()">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 6: SDK & SECURITY -->
+        <!-- ================================================================= -->
+        <section class="tab-view" id="tab-settings">
+          <div class="view-header">
+            <h2>Client SDK Integration &amp; Security</h2>
+            <p>How to connect your Web, Mobile, Tablet, and Desktop apps to this Admin Command Center.</p>
+          </div>
+
+          <div class="flags-category-box">
+            <h3>&#128279; 1-Line Drop-in Client SDK</h3>
+            <p style="font-size: 13px; color: var(--admin-muted); margin-bottom: 14px;">
+              Add this single script tag into the <code>&lt;head&gt;</code> of any client app (<code>pixkit</code>, <code>pixkit-mobile</code>, <code>pixkit-pc</code>) to instantly connect it to this fleet command center:
+            </p>
+            <pre style="background: #090B08; padding: 16px; border-radius: 10px; border: 1px solid var(--admin-border); font-family: var(--font-mono); font-size: 12.5px; color: var(--admin-lime); overflow-x: auto;">&lt;script src="/pixkit-admin/client-sdk/pixkit-remote.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  PixKitRemote.init({
+    configUrl: 'http://localhost:3001/api/status'
+  });
+&lt;/script&gt;</pre>
+          </div>
+
+          <div class="flags-category-box">
+            <h3>&#128274; Security PIN Change</h3>
+            <p style="font-size: 13px; color: var(--admin-muted); margin-bottom: 14px;">Update the 4-digit master PIN code required to open this dashboard.</p>
+            <div style="display:flex; gap:12px;">
+              <input type="password" id="newPinInput" maxlength="4" class="table-search-input" style="width: 140px; text-align: center; font-size: 18px; letter-spacing: 4px;" placeholder="****">
+              <button type="button" class="save-sync-btn" onclick="saveNewPin()">Save New PIN</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script src="js/admin-core.js"></script>
+  <script>
+    function saveNewPin() {
+      const pin = document.getElementById('newPinInput').value;
+      if (pin && pin.length === 4 && /^\d+$/.test(pin)) {
+        localStorage.setItem('pixkit_admin_pin_hash', pin);
+        alert('Master PIN successfully changed to: ' + pin);
+        document.getElementById('newPinInput').value = '';
+      } else {
+        alert('PIN must be exactly 4 digits.');
+      }
+    }
+  </script>
+</body>
+</html>
+

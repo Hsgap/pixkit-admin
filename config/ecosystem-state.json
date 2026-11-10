@@ -1,0 +1,88 @@
+{
+  "system": {
+    "version": "1.0.0",
+    "lastUpdated": "2026-11-10T14:45:00.000Z",
+    "updatedBy": "Rishi (Owner)"
+  },
+  "maintenance": {
+    "global": false,
+    "platforms": {
+      "web": false,
+      "mobile_android": false,
+      "mobile_ios": false,
+      "tablet": false,
+      "desktop_pc": false
+    },
+    "message": {
+      "headline": "PixKit is undergoing scheduled maintenance",
+      "body": "Our studio is currently undergoing a quick cloud & engine upgrade. All your local browser files remain 100% safe. We will be back shortly!",
+      "estimatedUptime": "15 minutes",
+      "allowAdminBypass": true
+    }
+  },
+  "featureFlags": {
+    "editTools": {
+      "adjust": true,
+      "filters": true,
+      "crop": true,
+      "resize": true,
+      "rotateFlip": true,
+      "blurFocus": true,
+      "drawShapes": true,
+      "addText": true
+    },
+    "convertTools": {
+      "formatConverter": true,
+      "svgToPng": true,
+      "heicToJpg": true,
+      "imageToPdf": true,
+      "imageToIco": true,
+      "imageToBase64": true
+    },
+    "pdfTools": {
+      "mergePdf": true,
+      "splitPdf": true,
+      "compressPdf": true,
+      "pdfToImages": true,
+      "rotatePdf": true,
+      "deletePdfPages": true
+    },
+    "community": {
+      "leaderboard": true,
+      "supportModal": true,
+      "allowNewDonations": true,
+      "showTotalCollection": true
+    }
+  },
+  "broadcast": {
+    "enabled": false,
+    "id": "announcement_001",
+    "type": "info",
+    "headline": "Welcome to PixKit Studio v2",
+    "message": "Brand new client-side PDF and HEIC converter tools are now live in browser!",
+    "dismissible": true,
+    "actionUrl": "",
+    "actionLabel": ""
+  },
+  "versionControl": {
+    "mobile": {
+      "minSupportedVersion": "1.0.0",
+      "latestVersion": "1.2.0",
+      "forceUpdate": false,
+      "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",
+      "notes": "Performance improvements and new dark mode support."
+    },
+    "desktop": {
+      "minSupportedVersion": "1.0.0",
+      "latestVersion": "1.0.4",
+      "forceUpdate": false,
+      "updateUrl": "https://pixkit.studio/download",
+      "notes": "Native hardware acceleration updates."
+    }
+  },
+  "stats": {
+    "totalCollectionUSD": 5.00,
+    "totalSupportersCount": 1
+  }
+}
+
