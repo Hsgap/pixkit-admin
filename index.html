@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,17 +7,29 @@
   <meta name="description" content="Central Fleet Management & Kill Switch Dashboard for PixKit Web, Mobile, Tablet, and Desktop.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23D7F36A'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
   
+  <script>
+    // Immediate Theme Sync to prevent Flash of Unstyled Theme (FOUT)
+    try {
+      const savedTheme = localStorage.getItem('pixkit_admin_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    } catch (_) {}
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/admin.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;600;800&family=Manrope:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css?v=2.0">
 </head>
 <body>
 
   <!-- Security PIN Lock Screen -->
   <div class="admin-lock-screen" id="adminLockScreen">
     <div class="admin-lock-box">
-      <div class="lock-logo-badge">PK</div>
+      <div class="lock-logo-badge">✲</div>
       <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">PixKit Fleet HQ</h2>
       <p style="font-size: 13px; color: var(--admin-muted);">Enter 4-digit master PIN to unlock command center</p>
       
@@ -55,7 +67,7 @@
     <!-- Left Navigation Sidebar -->
     <aside class="admin-sidebar">
       <div class="sidebar-brand">
-        <div class="brand-icon-box">PK</div>
+        <div class="brand-mark">✲</div>
         <div class="brand-titles">
           <h1>PixKit HQ</h1>
           <span class="brand-badge">Command Center</span>
@@ -118,6 +130,11 @@
         </div>
 
         <div class="topbar-right">
+          <!-- Magic UI Animated Theme Toggle Button -->
+          <button id="adminThemeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle Light / Dark mode (Press 'T')" onclick="toggleAdminTheme(event)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          </button>
+
           <button type="button" class="save-sync-btn" onclick="saveEcosystemState()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             <span>Sync Live Changes</span>

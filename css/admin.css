@@ -1,53 +1,108 @@
 /* ==========================================================================
-   PixKit Fleet HQ — Executive Admin Command Center Stylesheet
-   Pure Dark/Light System, Electric Lime Accents, Glassmorphic Dashboard Cards
+   PixKit Fleet HQ — Master Admin Command Center Stylesheet
+   Faithfully matched to PixKit Studio Design System Tokens
+   Full Dark / Light Mode with View Transition Ripple & Calm Minimalist UI
    ========================================================================== */
 
-:root {
-  --admin-bg: #0C0E0B;
-  --admin-surface: #141712;
-  --admin-card: #1B1E18;
-  --admin-card-hover: #22261E;
-  --admin-border: #282C22;
-  --admin-border-focus: #3F4535;
-  --admin-ink: #F4F6EE;
-  --admin-muted: #8E9284;
-  --admin-lime: #D7F36A;
-  --admin-lime-hover: #CEEE59;
-  --admin-lime-dim: rgba(215, 243, 106, 0.12);
-  --admin-red: #EF4444;
-  --admin-red-dim: rgba(239, 68, 68, 0.14);
-  --admin-amber: #F59E0B;
-  --admin-amber-dim: rgba(245, 158, 11, 0.14);
-  --admin-blue: #3B82F6;
-  --admin-blue-dim: rgba(59, 130, 246, 0.14);
-  --admin-emerald: #10B981;
-  --admin-emerald-dim: rgba(16, 185, 129, 0.14);
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;600;800&family=Manrope:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+/* ==========================================================================
+   PixKit Design Tokens (Light Mode Default)
+   ========================================================================== */
+:root {
+  --admin-bg: #FBFBF8;
+  --admin-surface: #FFFFFF;
+  --admin-card: #FFFFFF;
+  --admin-card-hover: #F3F4ED;
+  --admin-border: #E9E9E3;
+  --admin-border-focus: #CDD0C1;
+  --admin-ink: #22241F;
+  --admin-muted: #85877F;
+  --admin-stage: #F0F0EB;
+  --admin-topbar-bg: rgba(251, 251, 248, 0.94);
+
+  --admin-lime: #D7F36A;
+  --admin-lime-hover: #D0EE5F;
+  --admin-lime-dim: rgba(215, 243, 106, 0.16);
+  --admin-lime-border: #B7CD64;
+  --admin-lime-text: #161A08;
+
+  --admin-red: #EF4444;
+  --admin-red-hover: #DC2626;
+  --admin-red-dim: rgba(239, 68, 68, 0.10);
+  --admin-red-border: rgba(239, 68, 68, 0.25);
+
+  --admin-emerald: #059669;
+  --admin-emerald-dim: rgba(5, 150, 105, 0.10);
+  --admin-emerald-border: rgba(5, 150, 105, 0.25);
+
+  --admin-amber: #D97706;
+  --admin-amber-dim: rgba(217, 119, 6, 0.10);
 
   --radius-sm: 8px;
   --radius-md: 14px;
-  --radius-lg: 20px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
   --radius-full: 9999px;
-  --shadow-card: 0 12px 36px rgba(0, 0, 0, 0.45);
+
+  --shadow-subtle: 0 4px 16px rgba(34, 36, 31, 0.04);
+  --shadow-card: 0 8px 24px rgba(35, 35, 26, 0.045);
+  --shadow-float: 0 12px 38px rgba(23, 25, 15, 0.09);
+
+  --font-display: 'Manrope', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', SFMono-Regular, monospace;
+
+  --transition-fast: 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-[data-theme="light"] {
-  --admin-bg: #F8F9F3;
-  --admin-surface: #FFFFFF;
-  --admin-card: #FFFFFF;
-  --admin-card-hover: #F2F5EA;
-  --admin-border: #E2E6D8;
-  --admin-border-focus: #B8C2A5;
-  --admin-ink: #1C2018;
-  --admin-muted: #6B7262;
-  --admin-lime: #7E9E15;
-  --admin-lime-hover: #6F8B12;
-  --admin-lime-dim: rgba(126, 158, 21, 0.12);
-  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.05);
+/* ==========================================================================
+   PixKit Dark Mode Theme Tokens
+   ========================================================================== */
+[data-theme="dark"] {
+  --admin-bg: #121310;
+  --admin-surface: #1A1C16;
+  --admin-card: #1A1C16;
+  --admin-card-hover: #22241D;
+  --admin-border: #292B23;
+  --admin-border-focus: #3D4034;
+  --admin-ink: #F2F3EC;
+  --admin-muted: #9FA197;
+  --admin-stage: #161713;
+  --admin-topbar-bg: rgba(18, 19, 16, 0.94);
+
+  --admin-lime: #D7F36A;
+  --admin-lime-hover: #E3FB7C;
+  --admin-lime-dim: rgba(215, 243, 106, 0.12);
+  --admin-lime-border: #4D591F;
+  --admin-lime-text: #121310;
+
+  --admin-red: #EF4444;
+  --admin-red-hover: #F87171;
+  --admin-red-dim: rgba(239, 68, 68, 0.15);
+  --admin-red-border: rgba(239, 68, 68, 0.35);
+
+  --admin-emerald: #10B981;
+  --admin-emerald-dim: rgba(16, 185, 129, 0.15);
+  --admin-emerald-border: rgba(16, 185, 129, 0.35);
+
+  --admin-amber: #F59E0B;
+  --admin-amber-dim: rgba(245, 158, 11, 0.15);
+
+  --shadow-subtle: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.40);
+  --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.55);
 }
+
+/* View Transitions Circular Ripple */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 9999999; }
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -58,16 +113,18 @@
 body {
   background-color: var(--admin-bg);
   color: var(--admin-ink);
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   display: flex;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* ==========================================================================
-   Admin Shell & Sidebar Navigation
+   Admin Shell Layout & Navigation Sidebar
    ========================================================================== */
 .admin-shell {
   display: flex;
@@ -76,7 +133,7 @@ body {
 }
 
 .admin-sidebar {
-  width: 260px;
+  width: 270px;
   background: var(--admin-surface);
   border-right: 1px solid var(--admin-border);
   display: flex;
@@ -86,61 +143,74 @@ body {
   position: sticky;
   top: 0;
   height: 100vh;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
 }
 
 .sidebar-brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 8px 24px;
+  padding: 0 8px 20px;
   border-bottom: 1px solid var(--admin-border);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
-.brand-icon-box {
-  width: 36px;
-  height: 36px;
+/* Signature PixKit Brand Mark */
+.brand-mark {
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
-  background: var(--admin-lime);
-  color: #121310;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  font-size: 18px;
+  background: var(--admin-ink);
+  color: var(--admin-bg);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-subtle);
+  transition: all var(--transition-normal);
 }
 
 .brand-titles h1 {
-  font-size: 16px;
+  font-family: var(--font-display);
+  font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.02em;
+  color: var(--admin-ink);
+  line-height: 1.2;
 }
 
 .brand-badge {
   font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
   background: var(--admin-lime-dim);
-  color: var(--admin-lime);
-  letter-spacing: 0.05em;
+  color: var(--admin-ink);
+  border: 1px solid var(--admin-lime-border);
+  letter-spacing: 0.04em;
+  display: inline-block;
+  margin-top: 2px;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   flex: 1;
+  overflow-y: auto;
 }
 
 .nav-section-title {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   color: var(--admin-muted);
   letter-spacing: 0.08em;
-  padding: 12px 10px 4px;
+  padding: 14px 10px 6px;
 }
 
 .nav-link {
@@ -150,12 +220,13 @@ body {
   padding: 10px 14px;
   border-radius: var(--radius-md);
   color: var(--admin-muted);
+  font-family: var(--font-body);
   font-size: 13.5px;
   font-weight: 600;
   text-decoration: none;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all var(--transition-fast);
   background: none;
   width: 100%;
   text-align: left;
@@ -163,17 +234,14 @@ body {
 
 .nav-link:hover {
   color: var(--admin-ink);
-  background: var(--admin-card);
+  background: var(--admin-card-hover);
 }
 
 .nav-link.active {
-  color: #121310;
+  color: var(--admin-lime-text);
   background: var(--admin-lime);
   font-weight: 800;
-}
-
-[data-theme="light"] .nav-link.active {
-  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(215, 243, 106, 0.35);
 }
 
 .sidebar-footer {
@@ -194,19 +262,21 @@ body {
   border-radius: var(--radius-md);
   background: var(--admin-red-dim);
   color: var(--admin-red);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid var(--admin-red-border);
+  font-family: var(--font-body);
   font-weight: 700;
   font-size: 12.5px;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all var(--transition-fast);
 }
 
 .admin-lock-btn:hover {
-  background: rgba(239, 68, 68, 0.25);
+  background: var(--admin-red);
+  color: #FFFFFF;
 }
 
 /* ==========================================================================
-   Main Content Area & Topbar
+   Admin Topbar & Controls
    ========================================================================== */
 .admin-main {
   flex: 1;
@@ -218,7 +288,9 @@ body {
 
 .admin-topbar {
   height: 72px;
-  background: var(--admin-surface);
+  background: var(--admin-topbar-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--admin-border);
   padding: 0 32px;
   display: flex;
@@ -227,12 +299,14 @@ body {
   position: sticky;
   top: 0;
   z-index: 40;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
 }
 
 .topbar-left {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .fleet-status-pill {
@@ -249,13 +323,13 @@ body {
 .fleet-status-pill.operational {
   background: var(--admin-emerald-dim);
   color: var(--admin-emerald);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid var(--admin-emerald-border);
 }
 
 .fleet-status-pill.maintenance {
   background: var(--admin-red-dim);
   color: var(--admin-red);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid var(--admin-red-border);
 }
 
 .pulse-dot {
@@ -275,7 +349,31 @@ body {
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+}
+
+/* Theme Toggle Button (Exact PixKit Style) */
+.theme-toggle-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--admin-stage);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--admin-card-hover);
+  border-color: var(--admin-border-focus);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn svg {
+  transition: transform var(--transition-normal);
 }
 
 .save-sync-btn {
@@ -285,17 +383,20 @@ body {
   padding: 9px 18px;
   border-radius: var(--radius-md);
   background: var(--admin-lime);
-  color: #121310;
-  border: none;
+  color: var(--admin-lime-text);
+  border: 1px solid var(--admin-lime-border);
+  font-family: var(--font-body);
   font-weight: 800;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(215, 243, 106, 0.3);
+  transition: all var(--transition-fast);
 }
 
 .save-sync-btn:hover {
   background: var(--admin-lime-hover);
   transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(215, 243, 106, 0.45);
 }
 
 /* ==========================================================================
@@ -314,7 +415,7 @@ body {
 
 .tab-view.active {
   display: block;
-  animation: fadeInView 0.25s ease;
+  animation: fadeInView 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes fadeInView {
@@ -327,6 +428,7 @@ body {
 }
 
 .view-header h2 {
+  font-family: var(--font-display);
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -345,19 +447,19 @@ body {
   background: var(--admin-card);
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-lg);
-  padding: 28px;
+  padding: 26px 28px;
   margin-bottom: 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  position: relative;
-  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-normal);
 }
 
 .hero-kill-card.is-active-shutdown {
-  border-color: rgba(239, 68, 68, 0.4);
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), var(--admin-card));
+  border-color: var(--admin-red);
+  background: var(--admin-red-dim);
 }
 
 .kill-left {
@@ -372,6 +474,7 @@ body {
   border-radius: var(--radius-md);
   background: var(--admin-red-dim);
   color: var(--admin-red);
+  border: 1px solid var(--admin-red-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -379,6 +482,7 @@ body {
 }
 
 .kill-text h3 {
+  font-family: var(--font-display);
   font-size: 18px;
   font-weight: 800;
   margin-bottom: 4px;
@@ -387,15 +491,17 @@ body {
 .kill-text p {
   font-size: 13px;
   color: var(--admin-muted);
-  max-width: 560px;
+  max-width: 580px;
+  line-height: 1.5;
 }
 
-/* Big Custom Toggle Switch */
+/* Toggle Switch */
 .switch-box {
   position: relative;
   display: inline-block;
-  width: 60px;
+  width: 58px;
   height: 32px;
+  flex-shrink: 0;
 }
 
 .switch-box input {
@@ -408,8 +514,9 @@ body {
   position: absolute;
   cursor: pointer;
   inset: 0;
-  background-color: var(--admin-border-focus);
-  transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: var(--admin-border);
+  border: 1px solid var(--admin-border-focus);
+  transition: var(--transition-normal);
   border-radius: 34px;
 }
 
@@ -418,19 +525,21 @@ body {
   content: "";
   height: 24px;
   width: 24px;
-  left: 4px;
-  bottom: 4px;
+  left: 3px;
+  bottom: 3px;
   background-color: white;
-  transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: var(--transition-normal);
   border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 input:checked + .slider-round {
   background-color: var(--admin-red);
+  border-color: var(--admin-red);
 }
 
 input:checked + .slider-round:before {
-  transform: translateX(28px);
+  transform: translateX(26px);
 }
 
 /* ==========================================================================
@@ -438,8 +547,8 @@ input:checked + .slider-round:before {
    ========================================================================== */
 .platform-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
   margin-bottom: 32px;
 }
 
@@ -451,12 +560,14 @@ input:checked + .slider-round:before {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-subtle);
+  transition: all var(--transition-fast);
 }
 
 .platform-card:hover {
   border-color: var(--admin-border-focus);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
 }
 
 .platform-card-header {
@@ -472,44 +583,49 @@ input:checked + .slider-round:before {
 }
 
 .platform-icon {
-  font-size: 20px;
-  color: var(--admin-lime);
+  font-size: 22px;
 }
 
 .platform-info h4 {
-  font-size: 15px;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 14.5px;
+  font-weight: 800;
 }
 
 .platform-status-tag {
   font-size: 11px;
   font-weight: 800;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: var(--radius-full);
 }
 
 .status-live {
   background: var(--admin-emerald-dim);
   color: var(--admin-emerald);
+  border: 1px solid var(--admin-emerald-border);
 }
 
 .status-down {
   background: var(--admin-red-dim);
   color: var(--admin-red);
+  border: 1px solid var(--admin-red-border);
 }
 
 /* ==========================================================================
-   Feature Flags Grid
+   Feature Flags Group Box
    ========================================================================== */
 .flags-category-box {
   background: var(--admin-card);
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-lg);
-  padding: 24px;
+  padding: 24px 26px;
   margin-bottom: 24px;
+  box-shadow: var(--shadow-subtle);
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
 }
 
 .flags-category-box h3 {
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 800;
   margin-bottom: 16px;
@@ -520,7 +636,7 @@ input:checked + .slider-round:before {
 
 .flags-items-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
   gap: 14px;
 }
 
@@ -529,12 +645,18 @@ input:checked + .slider-round:before {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: var(--admin-surface);
+  background: var(--admin-stage);
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.flag-row:hover {
+  background: var(--admin-card-hover);
 }
 
 .flag-label-col h5 {
+  font-family: var(--font-display);
   font-size: 13.5px;
   font-weight: 700;
   margin-bottom: 2px;
@@ -554,20 +676,22 @@ input:checked + .slider-round:before {
 .mini-switch .slider-round:before {
   height: 18px;
   width: 18px;
-  left: 3px;
-  bottom: 3px;
+  left: 2px;
+  bottom: 2px;
 }
 
 .mini-switch input:checked + .slider-round {
   background-color: var(--admin-lime);
+  border-color: var(--admin-lime-border);
 }
 
 .mini-switch input:checked + .slider-round:before {
   transform: translateX(20px);
+  background-color: var(--admin-lime-text);
 }
 
 /* ==========================================================================
-   Leaderboard & Supporter Management Table
+   Metrics & Tables
    ========================================================================== */
 .metrics-strip {
   display: grid;
@@ -580,7 +704,8 @@ input:checked + .slider-round:before {
   background: var(--admin-card);
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-md);
-  padding: 18px 20px;
+  padding: 18px 22px;
+  box-shadow: var(--shadow-subtle);
 }
 
 .metric-card h6 {
@@ -592,9 +717,10 @@ input:checked + .slider-round:before {
 }
 
 .metric-val {
+  font-family: var(--font-display);
   font-size: 26px;
   font-weight: 900;
-  color: var(--admin-lime);
+  color: var(--admin-ink);
 }
 
 .admin-table-wrap {
@@ -602,6 +728,7 @@ input:checked + .slider-round:before {
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  box-shadow: var(--shadow-subtle);
 }
 
 .table-action-bar {
@@ -615,18 +742,21 @@ input:checked + .slider-round:before {
 }
 
 .table-search-input {
-  background: var(--admin-surface);
+  background: var(--admin-stage);
   border: 1px solid var(--admin-border);
   border-radius: var(--radius-md);
-  padding: 8px 14px;
+  padding: 9px 15px;
   color: var(--admin-ink);
+  font-family: var(--font-body);
   font-size: 13px;
   min-width: 260px;
   outline: none;
+  transition: border-color var(--transition-fast);
 }
 
 .table-search-input:focus {
-  border-color: var(--admin-lime);
+  border-color: var(--admin-border-focus);
+  background: var(--admin-surface);
 }
 
 .admin-data-table {
@@ -637,10 +767,10 @@ input:checked + .slider-round:before {
 }
 
 .admin-data-table th {
-  background: var(--admin-surface);
+  background: var(--admin-stage);
   color: var(--admin-muted);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 12px 18px;
@@ -658,33 +788,42 @@ input:checked + .slider-round:before {
 }
 
 .table-btn {
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: var(--radius-sm);
-  font-size: 11.5px;
+  font-family: var(--font-body);
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  border: 1px solid transparent;
-  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  background: var(--admin-stage);
   color: var(--admin-ink);
+  transition: all var(--transition-fast);
+}
+
+.table-btn:hover {
+  background: var(--admin-card-hover);
+  border-color: var(--admin-border-focus);
 }
 
 .table-btn.danger {
   color: var(--admin-red);
-  border-color: rgba(239, 68, 68, 0.3);
+  background: var(--admin-red-dim);
+  border-color: var(--admin-red-border);
 }
 
 .table-btn.danger:hover {
-  background: var(--admin-red-dim);
+  background: var(--admin-red);
+  color: #FFFFFF;
 }
 
 /* ==========================================================================
-   Security PIN Lock Screen Overlay
+   PIN Lock Screen Overlay
    ========================================================================== */
 .admin-lock-screen {
   position: fixed;
   inset: 0;
   z-index: 9999999;
-  background: #090B08;
+  background: var(--admin-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -694,26 +833,27 @@ input:checked + .slider-round:before {
 .admin-lock-box {
   max-width: 380px;
   width: 100%;
-  background: #141712;
-  border: 1px solid #282C22;
-  border-radius: var(--radius-lg);
-  padding: 36px 30px;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-xl);
+  padding: 38px 30px;
   text-align: center;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--shadow-float);
 }
 
 .lock-logo-badge {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: var(--admin-lime);
-  color: #121310;
-  font-weight: 900;
-  font-size: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: var(--admin-ink);
+  color: var(--admin-bg);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 24px;
+  display: inline-grid;
+  place-items: center;
   margin-bottom: 18px;
+  box-shadow: var(--shadow-card);
 }
 
 .pin-display-dots {
@@ -727,14 +867,14 @@ input:checked + .slider-round:before {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 2px solid #3F4535;
+  border: 2px solid var(--admin-border-focus);
   transition: all 0.2s ease;
 }
 
 .pin-dot.filled {
   background: var(--admin-lime);
   border-color: var(--admin-lime);
-  box-shadow: 0 0 10px rgba(215, 243, 106, 0.5);
+  box-shadow: 0 0 12px rgba(215, 243, 106, 0.6);
 }
 
 .pin-numpad {
@@ -746,10 +886,11 @@ input:checked + .slider-round:before {
 
 .numpad-btn {
   height: 54px;
-  background: #1D211A;
-  border: 1px solid #2E3326;
+  background: var(--admin-stage);
+  border: 1px solid var(--admin-border);
   border-radius: var(--radius-md);
-  color: #F4F6EE;
+  color: var(--admin-ink);
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 800;
   cursor: pointer;
@@ -757,11 +898,10 @@ input:checked + .slider-round:before {
 }
 
 .numpad-btn:hover {
-  background: #282D22;
-  border-color: #4A523E;
+  background: var(--admin-card-hover);
+  border-color: var(--admin-border-focus);
 }
 
 .numpad-btn:active {
   transform: scale(0.96);
 }
-

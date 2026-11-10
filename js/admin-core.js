@@ -18,6 +18,90 @@
   let supportersData = [];
 
   // =========================================================================
+  // 0. Theme Management (PixKit Light / Dark System & View Transition Ripple)
+  // =========================================================================
+  const THEME_STORAGE_KEY = 'pixkit_admin_theme';
+
+  function applyAdminTheme(theme) {
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (_) {}
+    updateThemeIcon(theme);
+  }
+
+  function updateThemeIcon(theme) {
+    const btn = document.getElementById('adminThemeToggleBtn');
+    if (!btn) return;
+    if (theme === 'dark') {
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+      btn.title = "Switch to Light Mode (Press 'T')";
+      btn.setAttribute('aria-label', 'Switch to Light Mode');
+    } else {
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+      btn.title = "Switch to Dark Mode (Press 'T')";
+      btn.setAttribute('aria-label', 'Switch to Dark Mode');
+    }
+  }
+
+  window.toggleAdminTheme = function (event) {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const nextTheme = isDark ? 'light' : 'dark';
+
+    const btn = document.getElementById('adminThemeToggleBtn');
+    const rect = btn?.getBoundingClientRect();
+    const x = rect ? rect.left + rect.width / 2 : (event?.clientX ?? window.innerWidth / 2);
+    const y = rect ? rect.top + rect.height / 2 : (event?.clientY ?? window.innerHeight / 2);
+
+    if (!document.startViewTransition) {
+      applyAdminTheme(nextTheme);
+      return;
+    }
+
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    const transition = document.startViewTransition(() => {
+      applyAdminTheme(nextTheme);
+    });
+
+    transition.ready.then(() => {
+      const clipPath = [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${endRadius}px at ${x}px ${y}px)`
+      ];
+      document.documentElement.animate(
+        { clipPath: clipPath },
+        {
+          duration: 350,
+          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          pseudoElement: '::view-transition-new(root)'
+        }
+      );
+    });
+  };
+
+  // Keyboard shortcut: Press 'T' to toggle theme anytime
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 't' || e.key === 'T') {
+      window.toggleAdminTheme();
+    }
+  });
+
+  // Apply saved theme immediately on script execution
+  try {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    applyAdminTheme(savedTheme);
+  } catch (_) {}
+
+  // =========================================================================
   // 1. PIN Security & Lock Screen
   // =========================================================================
 
