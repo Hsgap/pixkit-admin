@@ -100,7 +100,7 @@
   "versionControl": {
     "mobile": {
       "minSupportedVersion": "1.0.0",
-      "latestVersion": "1.2.0",
+      "latestVersion": "1.0.1",
       "forceUpdate": false,
       "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",
       "notes": "Performance improvements and new dark mode support."
