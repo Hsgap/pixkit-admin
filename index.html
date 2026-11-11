@@ -387,30 +387,138 @@
         <section class="tab-view" id="tab-broadcast">
           <div class="view-header">
             <h2>Global In-App Broadcast Alerts</h2>
-            <p>Push an instant high-priority banner notification to all connected Web &amp; Mobile users.</p>
+            <p>Push an instant high-priority banner notification to all connected Web &amp; Mobile users worldwide.</p>
           </div>
 
-          <div class="flags-category-box">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-              <h3>Broadcast Status (Active / Inactive)</h3>
-              <label class="switch-box mini-switch">
-                <input type="checkbox" id="broadcastToggle" onchange="updateBroadcast()">
-                <span class="slider-round"></span>
-              </label>
+          <!-- Status Hero Bar -->
+          <div class="flags-category-box" style="margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 14px;">
+              <div>
+                <h3 style="margin: 0 0 4px 0;" id="broadcastStatusHeader">Broadcast Status: <span style="color: var(--admin-amber);" id="broadcastStatusIndicator">Inactive / Draft</span></h3>
+                <p style="font-size: 12.5px; color: var(--admin-muted); margin: 0;" id="broadcastStatusSubtext">Toggle on to immediately stream this announcement to all active visitors.</p>
+              </div>
+              <div style="display:flex; align-items:center; gap:16px;">
+                <label class="switch-box">
+                  <input type="checkbox" id="broadcastToggle" onchange="toggleBroadcastActive(this.checked)">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
             </div>
+          </div>
 
-            <div style="display:flex; flex-direction:column; gap:16px;">
-              <div>
-                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Notice Headline</label>
-                <input type="text" id="broadcastHeadline" class="table-search-input" style="width: 100%;" placeholder="e.g. Server Maintenance Tonight" onchange="updateBroadcast()">
+          <!-- Interactive Live Banner Preview -->
+          <div class="broadcast-preview-card">
+            <div class="broadcast-preview-header">
+              <span class="broadcast-preview-title">Live Banner Preview (Exact Studio Rendering)</span>
+              <span style="font-size: 11px; color: var(--admin-muted); font-weight: 700;" id="previewPlatformTag">All Platforms</span>
+            </div>
+            <div class="broadcast-banner-mock theme-announcement" id="broadcastPreviewBanner">
+              <span id="previewBannerIcon" style="font-size: 15px;">✨</span>
+              <span style="line-height: 1.4;">
+                <strong id="previewBannerHeadline" style="font-weight: 800; margin-right: 4px;">Welcome to PixKit Studio v2:</strong>
+                <span id="previewBannerMessage">Brand new client-side PDF and HEIC converter tools are now live in browser!</span>
+              </span>
+              <span class="broadcast-btn-mock" id="previewBannerBtn" style="background: #121310; color: #FFFFFF;">
+                <span id="previewBannerBtnLabel">Try Now</span> &rarr;
+              </span>
+              <span id="previewBannerDismiss" style="font-size: 17px; line-height: 1; opacity: 0.75; cursor: pointer; margin-left: 6px;">&times;</span>
+            </div>
+          </div>
+
+          <!-- Quick Presets Strip -->
+          <div style="margin-bottom: 20px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <span style="font-size: 11.5px; font-weight: 800; color: var(--admin-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">Quick Presets:</span>
+              <button type="button" class="broadcast-preset-btn" onclick="applyBroadcastPreset('feature')">
+                <span>✨ Feature Launch</span>
+              </button>
+              <button type="button" class="broadcast-preset-btn" onclick="applyBroadcastPreset('maintenance')">
+                <span>🛠️ Scheduled Maintenance</span>
+              </button>
+              <button type="button" class="broadcast-preset-btn" onclick="applyBroadcastPreset('community')">
+                <span>📢 Community Notice</span>
+              </button>
+              <button type="button" class="broadcast-preset-btn" onclick="applyBroadcastPreset('urgent')">
+                <span>🚨 Urgent Advisory</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Customization Configuration Box -->
+          <div class="flags-category-box">
+            <h3 style="margin-bottom: 18px;">Customize Alert Appearance &amp; Delivery</h3>
+
+            <div style="display:flex; flex-direction:column; gap:18px;">
+              <!-- Row 1: Alert Theme & Target Platform -->
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                <div>
+                  <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Alert Theme / Color Style</label>
+                  <select id="broadcastType" class="table-search-input" style="width: 100%; cursor: pointer;" onchange="updateBroadcastPreviewAndState()">
+                    <option value="announcement">🟢 Feature Announcement (Electric Lime)</option>
+                    <option value="info">🔵 General Info &amp; Updates (Sky Blue)</option>
+                    <option value="warning">🟠 Maintenance Notice (Amber Orange)</option>
+                    <option value="urgent">🔴 Critical / Urgent Advisory (Coral Red)</option>
+                    <option value="purple">🟣 Supporter &amp; Community Spotlight (Purple)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Target Audience / Platform</label>
+                  <select id="broadcastPlatform" class="table-search-input" style="width: 100%; cursor: pointer;" onchange="updateBroadcastPreviewAndState()">
+                    <option value="all">🌐 All Connected Platforms (Web Studio &amp; Mobile App)</option>
+                    <option value="web">💻 Web Studio Visitors Only (pixkit.site)</option>
+                    <option value="mobile">📱 Mobile App Users Only (Android / iOS)</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Message Body</label>
-                <textarea id="broadcastMessage" class="table-search-input" style="width: 100%; height: 70px; resize: vertical;" placeholder="Detailed alert message..." onchange="updateBroadcast()"></textarea>
+
+              <!-- Row 2: Headline & Icon -->
+              <div style="display:grid; grid-template-columns: 80px 1fr; gap: 14px;">
+                <div>
+                  <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Icon</label>
+                  <input type="text" id="broadcastIcon" class="table-search-input" style="width: 100%; text-align: center; font-size: 18px;" value="✨" maxlength="4" oninput="updateBroadcastPreviewAndState()">
+                </div>
+                <div>
+                  <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Notice Headline</label>
+                  <input type="text" id="broadcastHeadline" class="table-search-input" style="width: 100%;" placeholder="e.g. New Image Converter Tools Live!" oninput="updateBroadcastPreviewAndState()">
+                </div>
               </div>
+
+              <!-- Row 3: Message Body -->
               <div>
-                <label style="font-size: 12px; font-weight: 700; color: var(--admin-muted); display: block; margin-bottom: 6px;">Action Button Link (Optional)</label>
-                <input type="text" id="broadcastUrl" class="table-search-input" style="width: 100%;" placeholder="https://..." onchange="updateBroadcast()">
+                <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Message Body (Description shown to users)</label>
+                <textarea id="broadcastMessage" class="table-search-input" style="width: 100%; height: 75px; resize: vertical; line-height: 1.5;" placeholder="Detailed alert message..." oninput="updateBroadcastPreviewAndState()"></textarea>
+              </div>
+
+              <!-- Row 4: Action Button URL & Label -->
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+                <div>
+                  <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Action Button Link (Optional)</label>
+                  <input type="text" id="broadcastUrl" class="table-search-input" style="width: 100%;" placeholder="https://... or #/convert or support" oninput="updateBroadcastPreviewAndState()">
+                </div>
+                <div>
+                  <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Action Button Text</label>
+                  <input type="text" id="broadcastLabel" class="table-search-input" style="width: 100%;" placeholder="e.g. Try Now or Learn More" oninput="updateBroadcastPreviewAndState()">
+                </div>
+              </div>
+
+              <!-- Row 5: Dismissible Option -->
+              <div style="padding-top: 6px; border-top: 1px solid var(--admin-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <span style="font-size: 13.5px; font-weight: 700; color: var(--admin-ink); display: block;">Allow Visitors to Dismiss Banner</span>
+                  <p style="font-size: 12px; color: var(--admin-muted); margin: 3px 0 0;">When enabled, visitors can close the banner with &times;. When disabled, the banner remains persistent.</p>
+                </div>
+                <label class="switch-box mini-switch">
+                  <input type="checkbox" id="broadcastDismissible" checked onchange="updateBroadcastPreviewAndState()">
+                  <span class="slider-round"></span>
+                </label>
+              </div>
+
+              <!-- Actions Strip: Push Live / Reset Draft -->
+              <div style="display:flex; justify-content:flex-end; gap:12px; margin-top: 8px;">
+                <button type="button" class="table-btn danger" onclick="resetBroadcastToDraft()" title="Clear and deactivate broadcast">Turn Off &amp; Reset</button>
+                <button type="button" class="table-btn" onclick="pushBroadcastLiveNow()" style="background: var(--admin-lime); color: var(--admin-lime-text); border-color: var(--admin-lime-border); font-weight: 800; padding: 10px 24px; font-size: 13.5px;" id="btnPushBroadcastLive">
+                  🚀 Push Live Broadcast Now
+                </button>
               </div>
             </div>
           </div>

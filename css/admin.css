@@ -1308,3 +1308,99 @@ input:checked + .slider-round:before {
   margin-top: 10px;
 }
 
+/* ==========================================================================
+   Broadcast Alerts Center Styles
+   ========================================================================== */
+.broadcast-preview-card {
+  background: var(--admin-stage);
+  border: 1px dashed var(--admin-border-focus);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+
+.broadcast-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.broadcast-preview-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--admin-muted);
+}
+
+.broadcast-banner-mock {
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: all var(--transition-fast);
+  flex-wrap: wrap;
+}
+
+.broadcast-banner-mock.theme-announcement {
+  background: #D7F36A;
+  color: #121310;
+}
+
+.broadcast-banner-mock.theme-info {
+  background: #38BDF8;
+  color: #0F172A;
+}
+
+.broadcast-banner-mock.theme-warning {
+  background: #F59E0B;
+  color: #18181B;
+}
+
+.broadcast-banner-mock.theme-urgent {
+  background: #EF4444;
+  color: #FFFFFF;
+}
+
+.broadcast-banner-mock.theme-purple {
+  background: #A855F7;
+  color: #FFFFFF;
+}
+
+.broadcast-btn-mock {
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.broadcast-preset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--admin-stage);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.broadcast-preset-btn:hover {
+  background: var(--admin-card-hover);
+  border-color: var(--admin-lime);
+  color: var(--admin-lime);
+}
+
+

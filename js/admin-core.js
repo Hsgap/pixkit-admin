@@ -727,10 +727,23 @@
     const bcHeadline = document.getElementById('broadcastHeadline');
     const bcMessage = document.getElementById('broadcastMessage');
     const bcUrl = document.getElementById('broadcastUrl');
+    const bcLabel = document.getElementById('broadcastLabel');
+    const bcType = document.getElementById('broadcastType');
+    const bcPlatform = document.getElementById('broadcastPlatform');
+    const bcIcon = document.getElementById('broadcastIcon');
+    const bcDismissible = document.getElementById('broadcastDismissible');
+
     if (bcToggle) bcToggle.checked = !!bc.enabled;
     if (bcHeadline && document.activeElement !== bcHeadline) bcHeadline.value = bc.headline || '';
     if (bcMessage && document.activeElement !== bcMessage) bcMessage.value = bc.message || '';
     if (bcUrl && document.activeElement !== bcUrl) bcUrl.value = bc.actionUrl || '';
+    if (bcLabel && document.activeElement !== bcLabel) bcLabel.value = bc.actionLabel || '';
+    if (bcType && document.activeElement !== bcType) bcType.value = bc.type || 'announcement';
+    if (bcPlatform && document.activeElement !== bcPlatform) bcPlatform.value = bc.targetPlatform || 'all';
+    if (bcIcon && document.activeElement !== bcIcon) bcIcon.value = bc.icon || (THEME_DEFAULT_ICONS[bc.type] || '✨');
+    if (bcDismissible) bcDismissible.checked = bc.dismissible !== false;
+
+    updateBroadcastPreview();
 
     // 7. Version Control Fields
     const vc = ecosystemState.versionControl || {};
@@ -783,15 +796,204 @@
     window.togglePlatformFeatureFlag(currentFlagsPlatform, cat, key, isEnabled);
   };
 
-  window.updateBroadcast = function () {
-    ecosystemState.broadcast = {
-      enabled: document.getElementById('broadcastToggle')?.checked || false,
-      headline: document.getElementById('broadcastHeadline')?.value || '',
-      message: document.getElementById('broadcastMessage')?.value || '',
-      actionUrl: document.getElementById('broadcastUrl')?.value || '',
-      dismissible: true
-    };
+  // =========================================================================
+  // Broadcast Alerts Engine & Customization
+  // =========================================================================
+
+  const THEME_DEFAULT_ICONS = {
+    announcement: '✨',
+    info: 'ℹ️',
+    warning: '🛠️',
+    urgent: '🚨',
+    purple: '💜'
+  };
+
+  function updateBroadcastPreview() {
+    const banner = document.getElementById('broadcastPreviewBanner');
+    if (!banner) return;
+
+    const type = document.getElementById('broadcastType')?.value || 'announcement';
+    const icon = document.getElementById('broadcastIcon')?.value || THEME_DEFAULT_ICONS[type] || '✨';
+    const headline = document.getElementById('broadcastHeadline')?.value || '';
+    const message = document.getElementById('broadcastMessage')?.value || '';
+    const url = document.getElementById('broadcastUrl')?.value || '';
+    const label = document.getElementById('broadcastLabel')?.value || 'Try Now';
+    const dismissible = document.getElementById('broadcastDismissible')?.checked !== false;
+    const isLive = document.getElementById('broadcastToggle')?.checked || false;
+    const platform = document.getElementById('broadcastPlatform')?.value || 'all';
+
+    // 1. Update theme class
+    banner.className = `broadcast-banner-mock theme-${type}`;
+
+    // 2. Update content
+    const iconEl = document.getElementById('previewBannerIcon');
+    const headlineEl = document.getElementById('previewBannerHeadline');
+    const messageEl = document.getElementById('previewBannerMessage');
+    const btnEl = document.getElementById('previewBannerBtn');
+    const btnLabelEl = document.getElementById('previewBannerBtnLabel');
+    const dismissEl = document.getElementById('previewBannerDismiss');
+    const platformTag = document.getElementById('previewPlatformTag');
+
+    if (iconEl) iconEl.textContent = icon;
+    if (headlineEl) {
+      headlineEl.textContent = headline ? `${headline}:` : '';
+      headlineEl.style.display = headline ? 'inline' : 'none';
+    }
+    if (messageEl) messageEl.textContent = message || 'Broadcast alert message preview...';
+
+    if (btnEl) {
+      if (url && url.trim()) {
+        btnEl.style.display = 'inline-flex';
+        if (btnLabelEl) btnLabelEl.textContent = label || 'Learn More';
+      } else {
+        btnEl.style.display = 'none';
+      }
+    }
+
+    if (dismissEl) {
+      dismissEl.style.display = dismissible ? 'inline-block' : 'none';
+    }
+
+    if (platformTag) {
+      const platNames = { all: 'All Platforms (Web & Mobile)', web: 'Web Studio Only', mobile: 'Mobile App Only' };
+      platformTag.textContent = platNames[platform] || 'All Platforms';
+    }
+
+    // 3. Status indicator
+    const statusIndicator = document.getElementById('broadcastStatusIndicator');
+    const statusSubtext = document.getElementById('broadcastStatusSubtext');
+
+    if (statusIndicator) {
+      if (isLive) {
+        statusIndicator.innerHTML = '<span style="color: var(--admin-emerald); font-weight:800;">● Active &amp; Streaming Worldwide</span>';
+      } else {
+        statusIndicator.innerHTML = '<span style="color: var(--admin-amber); font-weight:800;">○ Inactive (Draft Mode)</span>';
+      }
+    }
+    if (statusSubtext) {
+      statusSubtext.textContent = isLive
+        ? 'Currently streaming in real-time to active visitors across ' + (platform === 'all' ? 'Web & Mobile' : platform.toUpperCase()) + '.'
+        : 'Saved as draft. Toggle switch on or click "Push Live Broadcast" to stream live.';
+    }
+  }
+  window.updateBroadcastPreview = updateBroadcastPreview;
+
+  window.updateBroadcastPreviewAndState = function () {
+    const isLive = document.getElementById('broadcastToggle')?.checked || false;
+    const headline = document.getElementById('broadcastHeadline')?.value || '';
+    const message = document.getElementById('broadcastMessage')?.value || '';
+    const url = document.getElementById('broadcastUrl')?.value || '';
+    const label = document.getElementById('broadcastLabel')?.value || 'Learn More';
+    const type = document.getElementById('broadcastType')?.value || 'announcement';
+    const platform = document.getElementById('broadcastPlatform')?.value || 'all';
+    const icon = document.getElementById('broadcastIcon')?.value || THEME_DEFAULT_ICONS[type] || '✨';
+    const dismissible = document.getElementById('broadcastDismissible')?.checked !== false;
+
+    if (!ecosystemState.broadcast) ecosystemState.broadcast = {};
+
+    ecosystemState.broadcast.enabled = isLive;
+    ecosystemState.broadcast.headline = headline;
+    ecosystemState.broadcast.message = message;
+    ecosystemState.broadcast.actionUrl = url;
+    ecosystemState.broadcast.actionLabel = label;
+    ecosystemState.broadcast.type = type;
+    ecosystemState.broadcast.targetPlatform = platform;
+    ecosystemState.broadcast.icon = icon;
+    ecosystemState.broadcast.dismissible = dismissible;
+
+    updateBroadcastPreview();
     saveEcosystemState();
+  };
+  window.updateBroadcast = window.updateBroadcastPreviewAndState;
+
+  window.toggleBroadcastActive = function (isChecked) {
+    if (!ecosystemState.broadcast) ecosystemState.broadcast = {};
+    ecosystemState.broadcast.enabled = isChecked;
+    if (isChecked) {
+      ecosystemState.broadcast.id = 'broadcast_' + Date.now();
+    }
+    window.updateBroadcastPreviewAndState();
+    showToast(isChecked ? '🚀 Broadcast alert is now LIVE worldwide!' : 'Broadcast alert turned off.', isChecked ? 'success' : 'info');
+  };
+
+  window.pushBroadcastLiveNow = function () {
+    const headline = document.getElementById('broadcastHeadline')?.value?.trim();
+    const message = document.getElementById('broadcastMessage')?.value?.trim();
+    if (!headline && !message) {
+      alert('Please enter at least a Notice Headline or Message Body before publishing.');
+      return;
+    }
+
+    const toggle = document.getElementById('broadcastToggle');
+    if (toggle) toggle.checked = true;
+
+    if (!ecosystemState.broadcast) ecosystemState.broadcast = {};
+    ecosystemState.broadcast.enabled = true;
+    ecosystemState.broadcast.id = 'broadcast_' + Date.now();
+
+    window.updateBroadcastPreviewAndState();
+    showToast('🚀 Broadcast alert published live worldwide!', 'success');
+  };
+
+  window.resetBroadcastToDraft = function () {
+    const toggle = document.getElementById('broadcastToggle');
+    if (toggle) toggle.checked = false;
+
+    if (!ecosystemState.broadcast) ecosystemState.broadcast = {};
+    ecosystemState.broadcast.enabled = false;
+
+    window.updateBroadcastPreviewAndState();
+    showToast('Broadcast deactivated and saved as draft.', 'info');
+  };
+
+  window.applyBroadcastPreset = function (presetKey) {
+    const presets = {
+      feature: {
+        type: 'announcement',
+        icon: '✨',
+        headline: 'New Tools Live in Studio',
+        message: 'Explore brand new client-side image editing and format converter tools with zero upload limits.',
+        url: '#/convert',
+        label: 'Try Now'
+      },
+      maintenance: {
+        type: 'warning',
+        icon: '🛠️',
+        headline: 'Scheduled Engine Maintenance',
+        message: 'PixKit cloud services will undergo a brief 10-minute upgrade tonight. Local in-browser editing remains 100% safe.',
+        url: '',
+        label: 'Learn More'
+      },
+      community: {
+        type: 'purple',
+        icon: '📢',
+        headline: 'Keep PixKit 100% Free & Open',
+        message: 'We are completely serverless and private. Voluntary contributions keep our studio alive for thousands of users.',
+        url: 'support',
+        label: 'Support Studio'
+      },
+      urgent: {
+        type: 'urgent',
+        icon: '🚨',
+        headline: 'Critical Infrastructure Advisory',
+        message: 'Cloud sync is currently experiencing brief latency. All your active edits are safely preserved in local browser memory.',
+        url: '',
+        label: 'Status Details'
+      }
+    };
+
+    const p = presets[presetKey];
+    if (!p) return;
+
+    document.getElementById('broadcastType').value = p.type;
+    document.getElementById('broadcastIcon').value = p.icon;
+    document.getElementById('broadcastHeadline').value = p.headline;
+    document.getElementById('broadcastMessage').value = p.message;
+    document.getElementById('broadcastUrl').value = p.url;
+    document.getElementById('broadcastLabel').value = p.label;
+
+    window.updateBroadcastPreviewAndState();
+    showToast(`Preset "${p.headline}" applied! Review preview and click Push Live.`, 'info');
   };
 
   window.updateVersionControl = function () {
