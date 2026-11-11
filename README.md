@@ -1,4 +1,4 @@
-# PixKit Fleet HQ — Master Admin Command Center
+# PixKit Admin — Fleet Management & Remote Control
 
 Central management and fleet control panel for all PixKit clients (**Web Studio**, **Mobile Apps**, **Tablet**, and **Desktop**).
 

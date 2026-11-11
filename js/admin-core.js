@@ -186,7 +186,7 @@
       }
       currentEnteredPin = '';
       updatePinDots();
-      showToast('Welcome to PixKit Fleet HQ', 'success');
+      showToast('Welcome to PixKit Admin', 'success');
       initDashboard();
     } else {
       const lockBox = document.querySelector('.admin-lock-box');
