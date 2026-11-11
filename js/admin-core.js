@@ -746,13 +746,7 @@
     updateBroadcastPreview();
 
     // 7. Version Control Fields
-    const vc = ecosystemState.versionControl || {};
-    const mobMin = document.getElementById('mobileMinVersion');
-    const mobLatest = document.getElementById('mobileLatestVersion');
-    const mobForce = document.getElementById('mobileForceUpdate');
-    if (mobMin && document.activeElement !== mobMin) mobMin.value = vc.mobile?.minSupportedVersion || '';
-    if (mobLatest && document.activeElement !== mobLatest) mobLatest.value = vc.mobile?.latestVersion || '';
-    if (mobForce) mobForce.checked = !!vc.mobile?.forceUpdate;
+    initVersionControlUI();
 
     // 8. Public Leaderboard status in Supporters card
     updateLeaderboardMetricStatus();
@@ -996,13 +990,270 @@
     showToast(`Preset "${p.headline}" applied! Review preview and click Push Live.`, 'info');
   };
 
-  window.updateVersionControl = function () {
-    ecosystemState.versionControl.mobile = {
-      minSupportedVersion: document.getElementById('mobileMinVersion')?.value || '1.0.0',
-      latestVersion: document.getElementById('mobileLatestVersion')?.value || '1.2.0',
-      forceUpdate: document.getElementById('mobileForceUpdate')?.checked || false
-    };
+  // =========================================================================
+  // Version Control & Fleet Enforcement Engine
+  // =========================================================================
+
+  let currentVersionPlatform = 'mobile';
+
+  function semverCompare(v1, v2) {
+    if (!v1 || !v2) return 0;
+    const p1 = String(v1).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+    const p2 = String(v2).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+    const len = Math.max(p1.length, p2.length);
+    for (let i = 0; i < len; i++) {
+      const a = p1[i] || 0;
+      const b = p2[i] || 0;
+      if (a > b) return 1;
+      if (a < b) return -1;
+    }
+    return 0;
+  }
+
+  function getActiveVersionPolicy() {
+    if (!ecosystemState.versionControl) ecosystemState.versionControl = {};
+    if (!ecosystemState.versionControl[currentVersionPlatform]) {
+      ecosystemState.versionControl[currentVersionPlatform] = {
+        minSupportedVersion: '1.0.0',
+        latestVersion: '1.2.0',
+        forceUpdate: false,
+        updateUrl: currentVersionPlatform === 'mobile'
+          ? 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
+          : 'https://pixkit.studio/download',
+        notes: 'Performance improvements and new dark mode support.'
+      };
+    }
+    return ecosystemState.versionControl[currentVersionPlatform];
+  }
+
+  function initVersionControlUI() {
+    const policy = getActiveVersionPolicy();
+    const minInput = document.getElementById('mobileMinVersion');
+    const latestInput = document.getElementById('mobileLatestVersion');
+    const forceToggle = document.getElementById('mobileForceUpdate');
+    const urlInput = document.getElementById('mobileUpdateUrl');
+    const notesInput = document.getElementById('mobileReleaseNotes');
+
+    if (minInput && document.activeElement !== minInput) minInput.value = policy.minSupportedVersion || '1.0.0';
+    if (latestInput && document.activeElement !== latestInput) latestInput.value = policy.latestVersion || '1.2.0';
+    if (forceToggle) forceToggle.checked = !!policy.forceUpdate;
+    if (urlInput && document.activeElement !== urlInput) urlInput.value = policy.updateUrl || '';
+    if (notesInput && document.activeElement !== notesInput) notesInput.value = policy.notes || '';
+
+    updateVersionPreview();
+  }
+  window.initVersionControlUI = initVersionControlUI;
+
+  function updateVersionPreview() {
+    const policy = getActiveVersionPolicy();
+    const minVer = document.getElementById('mobileMinVersion')?.value || policy.minSupportedVersion || '1.0.0';
+    const latestVer = document.getElementById('mobileLatestVersion')?.value || policy.latestVersion || '1.2.0';
+    const forceUpdate = document.getElementById('mobileForceUpdate')?.checked || false;
+    const updateUrl = document.getElementById('mobileUpdateUrl')?.value || policy.updateUrl || '';
+    const notes = document.getElementById('mobileReleaseNotes')?.value || policy.notes || 'Performance improvements and bug fixes.';
+
+    // 1. Hero pills & status indicator
+    const heroMin = document.getElementById('heroMinPill');
+    const heroLatest = document.getElementById('heroLatestPill');
+    const statusIndicator = document.getElementById('versionStatusIndicator');
+    const statusSubtext = document.getElementById('versionStatusSubtext');
+
+    if (heroMin) heroMin.textContent = `Min: v${minVer}`;
+    if (heroLatest) heroLatest.textContent = `Latest: v${latestVer}`;
+
+    if (statusIndicator) {
+      if (forceUpdate) {
+        statusIndicator.innerHTML = '<span style="color: #EF4444; font-weight:800;">🚨 Hard Force Update Active</span>';
+      } else {
+        statusIndicator.innerHTML = '<span style="color: var(--admin-emerald); font-weight:800;">● Active &amp; Protecting Fleet</span>';
+      }
+    }
+
+    if (statusSubtext) {
+      statusSubtext.textContent = forceUpdate
+        ? `Mandatory lockout: Any client running below v${minVer} will be blocked from accessing the studio.`
+        : `Soft enforcement: Users on v${minVer} or higher can use the studio; older builds will be prompted.`;
+    }
+
+    // 2. Modal preview elements
+    const previewPill = document.getElementById('previewPill');
+    const previewTitle = document.getElementById('previewModalTitle');
+    const previewSubtitle = document.getElementById('previewModalSubtitle');
+    const previewCurrentVer = document.getElementById('previewCurrentVer');
+    const previewTargetVer = document.getElementById('previewTargetVer');
+    const previewChangelogText = document.getElementById('previewChangelogText');
+    const previewBtnPrimary = document.getElementById('previewBtnPrimary');
+    const previewBtnSecondary = document.getElementById('previewBtnSecondary');
+    const previewModeTag = document.getElementById('previewModeTag');
+    const previewAppIcon = document.getElementById('previewAppIcon');
+
+    if (previewAppIcon) {
+      previewAppIcon.textContent = currentVersionPlatform === 'mobile' ? '📱' : '💻';
+    }
+
+    if (previewCurrentVer) previewCurrentVer.textContent = `v${minVer}`;
+    if (previewTargetVer) previewTargetVer.textContent = `v${latestVer}`;
+    if (previewChangelogText) previewChangelogText.textContent = notes;
+
+    if (forceUpdate) {
+      if (previewPill) {
+        previewPill.className = 'version-tag-pill pill-force';
+        previewPill.textContent = '🔴 Mandatory Update Required';
+      }
+      if (previewTitle) previewTitle.textContent = 'Critical Update Required';
+      if (previewSubtitle) previewSubtitle.textContent = `Your installed version (v${minVer}) is no longer supported. Please update to v${latestVer} to continue.`;
+      if (previewBtnSecondary) previewBtnSecondary.style.display = 'none';
+      if (previewModeTag) previewModeTag.textContent = 'Mandatory Lockout View';
+    } else {
+      if (previewPill) {
+        previewPill.className = 'version-tag-pill pill-recommended';
+        previewPill.textContent = '🔵 Recommended Upgrade';
+      }
+      if (previewTitle) previewTitle.textContent = 'New Version Available';
+      if (previewSubtitle) previewSubtitle.textContent = `A newer build (v${latestVer}) of PixKit is ready. Update now for the latest features and bug fixes.`;
+      if (previewBtnSecondary) previewBtnSecondary.style.display = 'block';
+      if (previewModeTag) previewModeTag.textContent = 'Soft / Dismissible View';
+    }
+
+    if (previewBtnPrimary) {
+      previewBtnPrimary.textContent = currentVersionPlatform === 'mobile' ? 'Update via Google Play ➔' : 'Download Latest Update ➔';
+      previewBtnPrimary.href = updateUrl || 'javascript:void(0)';
+      if (updateUrl && updateUrl.startsWith('http')) {
+        previewBtnPrimary.target = '_blank';
+      } else {
+        previewBtnPrimary.removeAttribute('target');
+      }
+    }
+  }
+  window.updateVersionPreview = updateVersionPreview;
+
+  window.updateVersionPreviewAndState = function () {
+    const policy = getActiveVersionPolicy();
+    policy.minSupportedVersion = document.getElementById('mobileMinVersion')?.value || '1.0.0';
+    policy.latestVersion = document.getElementById('mobileLatestVersion')?.value || '1.2.0';
+    policy.forceUpdate = document.getElementById('mobileForceUpdate')?.checked || false;
+    policy.updateUrl = document.getElementById('mobileUpdateUrl')?.value || '';
+    policy.notes = document.getElementById('mobileReleaseNotes')?.value || '';
+
+    updateVersionPreview();
     saveEcosystemState();
+  };
+  window.updateVersionControl = window.updateVersionPreviewAndState;
+
+  window.toggleVersionForceUpdate = function (isChecked) {
+    const policy = getActiveVersionPolicy();
+    policy.forceUpdate = isChecked;
+    const forceToggle = document.getElementById('mobileForceUpdate');
+    if (forceToggle) forceToggle.checked = isChecked;
+
+    window.updateVersionPreviewAndState();
+    showToast(isChecked ? '🚨 Force update enabled! Outdated versions will be hard-gated.' : 'Force update disabled. Updates are now recommended/soft.', isChecked ? 'warning' : 'info');
+  };
+
+  window.switchVersionPlatform = function (platformKey) {
+    currentVersionPlatform = platformKey;
+    initVersionControlUI();
+    showToast(`Switched view to ${platformKey === 'mobile' ? 'Mobile App (Android / iOS)' : 'Desktop & Web Standalone'} policy`, 'info');
+  };
+
+  window.applyVersionPreset = function (presetKey) {
+    const presets = {
+      baseline: {
+        min: '1.0.0',
+        latest: '1.0.0',
+        force: false,
+        notes: 'Initial production release. All client-side tools fully operational.',
+        url: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
+      },
+      soft_upgrade: {
+        min: '1.0.0',
+        latest: '1.2.0',
+        force: false,
+        notes: '⚡ Performance improvements, new dark mode support, and PDF rotation.',
+        url: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
+      },
+      hard_force: {
+        min: '1.2.0',
+        latest: '1.2.0',
+        force: true,
+        notes: '🔒 Critical security update & native engine upgrade. Required to continue.',
+        url: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
+      }
+    };
+
+    const p = presets[presetKey];
+    if (!p) return;
+
+    const minInput = document.getElementById('mobileMinVersion');
+    const latestInput = document.getElementById('mobileLatestVersion');
+    const forceToggle = document.getElementById('mobileForceUpdate');
+    const urlInput = document.getElementById('mobileUpdateUrl');
+    const notesInput = document.getElementById('mobileReleaseNotes');
+
+    if (minInput) minInput.value = p.min;
+    if (latestInput) latestInput.value = p.latest;
+    if (forceToggle) forceToggle.checked = p.force;
+    if (urlInput) urlInput.value = p.url;
+    if (notesInput) notesInput.value = p.notes;
+
+    window.updateVersionPreviewAndState();
+    showToast(`Applied "${presetKey.replace('_', ' ').toUpperCase()}" preset! Review preview and click Save & Publish.`, 'info');
+  };
+
+  window.saveAndPublishVersionPolicy = function () {
+    window.updateVersionPreviewAndState();
+    showToast('🚀 Version Policy successfully published live worldwide!', 'success');
+  };
+
+  window.runVersionSimulation = function () {
+    const testVer = document.getElementById('simTestVersion')?.value?.trim() || '1.0.0';
+    const policy = getActiveVersionPolicy();
+    const minVer = policy.minSupportedVersion || '1.0.0';
+    const latestVer = policy.latestVersion || '1.2.0';
+    const force = policy.forceUpdate;
+
+    const cmpMin = semverCompare(testVer, minVer);
+    const cmpLatest = semverCompare(testVer, latestVer);
+
+    const resultBox = document.getElementById('simResultBox');
+    if (!resultBox) return;
+
+    resultBox.style.display = 'flex';
+
+    if (cmpMin < 0 && force) {
+      resultBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      resultBox.style.border = '1px solid #EF4444';
+      resultBox.style.color = '#EF4444';
+      resultBox.innerHTML = `
+        <span style="font-size: 20px;">🚨</span>
+        <div>
+          <strong style="display: block;">OUTCOME: HARD-LOCKED (Force Update Gate)</strong>
+          <span style="font-size: 12px; color: #FCA5A5;">User on v${testVer} is strictly blocked from the app until they update to v${latestVer}. No bypass possible.</span>
+        </div>
+      `;
+    } else if (cmpLatest < 0) {
+      resultBox.style.background = 'rgba(56, 189, 248, 0.15)';
+      resultBox.style.border = '1px solid #38BDF8';
+      resultBox.style.color = '#38BDF8';
+      resultBox.innerHTML = `
+        <span style="font-size: 20px;">💡</span>
+        <div>
+          <strong style="display: block;">OUTCOME: SOFT UPDATE PROMPT</strong>
+          <span style="font-size: 12px; color: #BAE6FD;">User on v${testVer} sees a friendly "New Update Available (v${latestVer})" prompt with an option to update or continue.</span>
+        </div>
+      `;
+    } else {
+      resultBox.style.background = 'rgba(16, 185, 129, 0.15)';
+      resultBox.style.border = '1px solid #10B981';
+      resultBox.style.color = '#10B981';
+      resultBox.innerHTML = `
+        <span style="font-size: 20px;">✅</span>
+        <div>
+          <strong style="display: block;">OUTCOME: FULL ACCESS (Compliant Build)</strong>
+          <span style="font-size: 12px; color: #A7F3D0;">User on v${testVer} is completely up to date. App launches cleanly without any interruptions.</span>
+        </div>
+      `;
+    }
   };
 
   // =========================================================================
