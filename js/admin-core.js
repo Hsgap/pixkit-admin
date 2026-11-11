@@ -384,8 +384,8 @@
       icon: '🤝',
       description: 'Ecosystem modals, contribution banners, user leaderboard, and local edit history',
       tools: [
-        { id: 'leaderboard', name: 'Public Leaderboard', desc: 'Show contributor hall of fame & top supporters modal' },
-        { id: 'supportModal', name: 'Support / Donate Modal', desc: 'Allow Buy Me a Coffee & UPI voluntary contribution dialog' },
+        { id: 'leaderboard', name: 'Public Leaderboard', desc: 'Show contributor hall of fame & top supporters modal (Web Studio only)', platforms: ['web'] },
+        { id: 'supportModal', name: 'Support / Donate Modal', desc: 'Allow Buy Me a Coffee & voluntary contribution navigation' },
         { id: 'recentFiles', name: 'Recent Files & History', desc: 'Local browser storage for recent edits and quick re-opens' }
       ]
     }
@@ -415,6 +415,10 @@
           ecosystemState.featureFlags[plat][cat.categoryKey] = {};
         }
         cat.tools.forEach(tool => {
+          if (tool.platforms && !tool.platforms.includes(plat)) {
+            ecosystemState.featureFlags[plat][cat.categoryKey][tool.id] = false;
+            return;
+          }
           if (ecosystemState.featureFlags[plat][cat.categoryKey][tool.id] === undefined) {
             // Check legacy migration
             if (legacyFlags[cat.categoryKey] && legacyFlags[cat.categoryKey][tool.id] !== undefined) {
@@ -445,6 +449,7 @@
       ALL_TOOLS_SCHEMA.forEach(cat => {
         const catFlags = platFlags[cat.categoryKey] || {};
         cat.tools.forEach(tool => {
+          if (tool.platforms && !tool.platforms.includes(plat)) return;
           totalCount++;
           if (catFlags[tool.id] !== false) {
             activeCount++;
@@ -476,23 +481,27 @@
     ALL_TOOLS_SCHEMA.forEach(cat => {
       const catFlags = platFlags[cat.categoryKey] || {};
 
-      // Filter tools based on search query
+      // Filter tools based on search query and platform applicability
       const matchingTools = cat.tools.filter(t => {
+        if (t.platforms && !t.platforms.includes(plat)) return false;
         if (!query) return true;
         return t.name.toLowerCase().includes(query) ||
                t.desc.toLowerCase().includes(query) ||
                t.id.toLowerCase().includes(query);
       });
 
-      if (matchingTools.length === 0 && query) {
-        return; // Skip category if searching and nothing matches
+      if (matchingTools.length === 0 && (query || cat.tools.some(t => t.platforms && !t.platforms.includes(plat)))) {
+        if (matchingTools.length === 0) return;
       }
 
       renderedCategoriesCount++;
 
-      // Count active tools in this category
+      // Count active tools in this category for current platform
       let catActiveCount = 0;
+      let catTotalCount = 0;
       cat.tools.forEach(t => {
+        if (t.platforms && !t.platforms.includes(plat)) return;
+        catTotalCount++;
         if (catFlags[t.id] !== false) catActiveCount++;
       });
 
@@ -522,7 +531,7 @@
               <span>${cat.icon}</span>
               <span>${escapeHtml(cat.title)}</span>
             </h3>
-            <span class="category-count-badge" id="cat-badge-${cat.categoryKey}">${catActiveCount}/${cat.tools.length} Active</span>
+            <span class="category-count-badge" id="cat-badge-${cat.categoryKey}">${catActiveCount}/${catTotalCount} Active</span>
           </div>
           <p style="font-size: 12.5px; color: var(--admin-muted); margin-bottom: 16px;">${escapeHtml(cat.description)}</p>
           <div class="flags-items-list">
@@ -568,11 +577,14 @@
     const cat = ALL_TOOLS_SCHEMA.find(c => c.categoryKey === category);
     if (cat) {
       let activeCount = 0;
+      let totalCount = 0;
       cat.tools.forEach(t => {
+        if (t.platforms && !t.platforms.includes(plat)) return;
+        totalCount++;
         if (ecosystemState.featureFlags[plat][category][t.id] !== false) activeCount++;
       });
       const badge = document.getElementById(`cat-badge-${category}`);
-      if (badge) badge.textContent = `${activeCount}/${cat.tools.length} Active`;
+      if (badge) badge.textContent = `${activeCount}/${totalCount} Active`;
     }
 
     saveEcosystemState();
@@ -583,6 +595,7 @@
     ALL_TOOLS_SCHEMA.forEach(cat => {
       if (!ecosystemState.featureFlags[plat][cat.categoryKey]) ecosystemState.featureFlags[plat][cat.categoryKey] = {};
       cat.tools.forEach(tool => {
+        if (tool.platforms && !tool.platforms.includes(plat)) return;
         ecosystemState.featureFlags[plat][cat.categoryKey][tool.id] = isEnabled;
       });
     });

@@ -47,7 +47,7 @@
         "deletePdfPages": true
       },
       "community": {
-        "leaderboard": true,
+        "leaderboard": false,
         "supportModal": true,
         "recentFiles": true
       }
@@ -81,7 +81,7 @@
         "deletePdfPages": true
       },
       "community": {
-        "leaderboard": true,
+        "leaderboard": false,
         "supportModal": true,
         "recentFiles": true
       }
