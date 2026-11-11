@@ -18,37 +18,73 @@
     }
   },
   "featureFlags": {
-    "editTools": {
-      "adjust": true,
-      "filters": true,
-      "crop": true,
-      "resize": true,
-      "rotateFlip": true,
-      "blurFocus": true,
-      "drawShapes": true,
-      "addText": true
+    "web": {
+      "editTools": {
+        "adjust": true,
+        "filters": true,
+        "crop": true,
+        "resize": true,
+        "rotateFlip": true,
+        "compress": true,
+        "drawShapes": true,
+        "addText": true
+      },
+      "convertTools": {
+        "formatConverter": true,
+        "heicToJpg": true,
+        "svgToPng": true,
+        "imageToPdf": true,
+        "imageToIco": true,
+        "imageToBase64": true
+      },
+      "pdfTools": {
+        "mergePdf": true,
+        "splitPdf": true,
+        "compressPdf": true,
+        "pdfToImages": true,
+        "imagesToPdf": true,
+        "rotatePdf": true,
+        "deletePdfPages": true
+      },
+      "community": {
+        "leaderboard": true,
+        "supportModal": true,
+        "recentFiles": true
+      }
     },
-    "convertTools": {
-      "formatConverter": true,
-      "svgToPng": true,
-      "heicToJpg": true,
-      "imageToPdf": true,
-      "imageToIco": true,
-      "imageToBase64": true
-    },
-    "pdfTools": {
-      "mergePdf": true,
-      "splitPdf": true,
-      "compressPdf": true,
-      "pdfToImages": true,
-      "rotatePdf": true,
-      "deletePdfPages": true
-    },
-    "community": {
-      "leaderboard": true,
-      "supportModal": true,
-      "allowNewDonations": true,
-      "showTotalCollection": true
+    "mobile": {
+      "editTools": {
+        "adjust": true,
+        "filters": true,
+        "crop": true,
+        "resize": true,
+        "rotateFlip": true,
+        "compress": true,
+        "drawShapes": true,
+        "addText": true
+      },
+      "convertTools": {
+        "formatConverter": true,
+        "heicToJpg": true,
+        "svgToPng": true,
+        "imageToPdf": true,
+        "imageToIco": true,
+        "imageToBase64": true
+      },
+      "pdfTools": {
+        "mergePdf": true,
+        "splitPdf": true,
+        "compressPdf": true,
+        "pdfToImages": true,
+        "imagesToPdf": true,
+        "rotatePdf": true,
+        "deletePdfPages": true
+      },
+      "community": {
+        "leaderboard": true,
+        "supportModal": true,
+        "recentFiles": true
+      }
     }
   },
   "broadcast": {

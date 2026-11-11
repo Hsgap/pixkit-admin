@@ -82,12 +82,17 @@
       return false;
     },
 
-    // Check if a specific tool feature flag is enabled
+    // Check if a specific tool feature flag is enabled for current platform
     isFeatureEnabled: function (category, toolKey) {
       if (!this.state || !this.state.featureFlags) return true;
-      const cat = this.state.featureFlags[category];
-      if (cat && cat[toolKey] !== undefined) {
-        return !!cat[toolKey];
+      const flags = this.state.featureFlags;
+      // 1. Check platform-specific flags (e.g. flags.web.editTools.adjust or flags.mobile.editTools.adjust)
+      if (flags[this.platform] && flags[this.platform][category] && flags[this.platform][category][toolKey] !== undefined) {
+        return !!flags[this.platform][category][toolKey];
+      }
+      // 2. Fallback to global category flags if present
+      if (flags[category] && flags[category][toolKey] !== undefined) {
+        return !!flags[category][toolKey];
       }
       return true;
     },

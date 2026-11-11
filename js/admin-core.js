@@ -251,7 +251,293 @@
   }
   window.saveEcosystemState = saveEcosystemState;
 
+  // =========================================================================
+  // Granular All-Tools Ecosystem Schema (24 Ready Tools Across 4 Categories)
+  // =========================================================================
+  const ALL_TOOLS_SCHEMA = [
+    {
+      categoryKey: 'editTools',
+      title: 'Image Edit Tools',
+      icon: '🎨',
+      description: 'Standard client-side canvas manipulation, tone tuning, filters, and layer tools',
+      tools: [
+        { id: 'adjust', name: 'Adjust Tones', desc: 'Brightness, Contrast, Saturation, & Vibrance controls' },
+        { id: 'filters', name: 'Preset Filters', desc: 'Mono, Warm, Cool, Vintage, Cyberpunk, Film presets' },
+        { id: 'crop', name: 'Crop & Aspect Ratio', desc: 'Freeform selection & social media preset ratios' },
+        { id: 'resize', name: 'Resize & Dimensions', desc: 'Pixel width/height scaling & DPI preservation' },
+        { id: 'rotateFlip', name: 'Rotate & Flip', desc: '90° step rotation, horizontal & vertical mirror' },
+        { id: 'compress', name: 'Compress Image', desc: 'Client-side JPEG/PNG/WebP compression engine' },
+        { id: 'drawShapes', name: 'Draw & Shapes', desc: 'Freehand brush, rectangles, circles, arrows, highlighter' },
+        { id: 'addText', name: 'Add Text & Typography', desc: 'Custom text overlays, system fonts, styling & watermarks' }
+      ]
+    },
+    {
+      categoryKey: 'convertTools',
+      title: 'Format Conversion Tools',
+      icon: '🔄',
+      description: 'Zero-cloud image and document format conversion routines running directly in client',
+      tools: [
+        { id: 'formatConverter', name: 'Format Converter', desc: 'Batch PNG, JPG, WebP, AVIF, BMP converter' },
+        { id: 'heicToJpg', name: 'HEIC to JPG Converter', desc: 'Apple HEIC/HEIF client decoding into JPG' },
+        { id: 'svgToPng', name: 'SVG to PNG Converter', desc: 'High-res vector to raster image client rendering' },
+        { id: 'imageToPdf', name: 'Image to PDF', desc: 'Bundle one or more photos into multi-page PDF documents' },
+        { id: 'imageToIco', name: 'Image to ICO', desc: 'Multi-resolution website favicon generator' },
+        { id: 'imageToBase64', name: 'Image to Base64', desc: 'Convert image files to direct Data URI strings for web devs' }
+      ]
+    },
+    {
+      categoryKey: 'pdfTools',
+      title: 'PDF Document Tools',
+      icon: '📄',
+      description: 'Client-side PDF-Lib document assembly, extraction, page manipulation, and compression',
+      tools: [
+        { id: 'mergePdf', name: 'Merge PDF Files', desc: 'Concatenate multiple PDF documents in custom order' },
+        { id: 'splitPdf', name: 'Split PDF Files', desc: 'Extract individual pages or range splits into separate files' },
+        { id: 'compressPdf', name: 'Compress PDF', desc: 'DPI reduction and embedded image resampling' },
+        { id: 'pdfToImages', name: 'PDF to Images', desc: 'Render PDF pages into crisp PNG/JPG image files' },
+        { id: 'imagesToPdf', name: 'Images to PDF', desc: 'Compile multiple JPG/PNG images into a formatted PDF' },
+        { id: 'rotatePdf', name: 'Rotate PDF Pages', desc: 'Permanent 90°/180° page rotation per page or document' },
+        { id: 'deletePdfPages', name: 'Delete PDF Pages', desc: 'Selectively remove pages and download cleaned document' }
+      ]
+    },
+    {
+      categoryKey: 'community',
+      title: 'Community & Ecosystem Features',
+      icon: '🤝',
+      description: 'Ecosystem modals, contribution banners, user leaderboard, and local edit history',
+      tools: [
+        { id: 'leaderboard', name: 'Public Leaderboard', desc: 'Show contributor hall of fame & top supporters modal' },
+        { id: 'supportModal', name: 'Support / Donate Modal', desc: 'Allow Buy Me a Coffee & UPI voluntary contribution dialog' },
+        { id: 'recentFiles', name: 'Recent Files & History', desc: 'Local browser storage for recent edits and quick re-opens' }
+      ]
+    }
+  ];
+
+  let currentFlagsPlatform = 'web';
+  window.currentFlagsPlatform = currentFlagsPlatform;
+
+  function ensureFeatureFlagsStructure() {
+    if (!ecosystemState.featureFlags || typeof ecosystemState.featureFlags !== 'object') {
+      ecosystemState.featureFlags = {};
+    }
+
+    const legacyFlags = {
+      editTools: ecosystemState.featureFlags.editTools,
+      convertTools: ecosystemState.featureFlags.convertTools,
+      pdfTools: ecosystemState.featureFlags.pdfTools,
+      community: ecosystemState.featureFlags.community
+    };
+
+    ['web', 'mobile'].forEach(plat => {
+      if (!ecosystemState.featureFlags[plat] || typeof ecosystemState.featureFlags[plat] !== 'object') {
+        ecosystemState.featureFlags[plat] = {};
+      }
+      ALL_TOOLS_SCHEMA.forEach(cat => {
+        if (!ecosystemState.featureFlags[plat][cat.categoryKey]) {
+          ecosystemState.featureFlags[plat][cat.categoryKey] = {};
+        }
+        cat.tools.forEach(tool => {
+          if (ecosystemState.featureFlags[plat][cat.categoryKey][tool.id] === undefined) {
+            // Check legacy migration
+            if (legacyFlags[cat.categoryKey] && legacyFlags[cat.categoryKey][tool.id] !== undefined) {
+              ecosystemState.featureFlags[plat][cat.categoryKey][tool.id] = legacyFlags[cat.categoryKey][tool.id];
+            } else {
+              ecosystemState.featureFlags[plat][cat.categoryKey][tool.id] = true;
+            }
+          }
+        });
+      });
+    });
+
+    // Cleanup legacy top-level keys if any
+    delete ecosystemState.featureFlags.editTools;
+    delete ecosystemState.featureFlags.convertTools;
+    delete ecosystemState.featureFlags.pdfTools;
+    delete ecosystemState.featureFlags.community;
+  }
+
+  function updatePlatformFlagsCounters() {
+    if (!ecosystemState || !ecosystemState.featureFlags) return;
+
+    ['web', 'mobile'].forEach(plat => {
+      const platFlags = ecosystemState.featureFlags[plat] || {};
+      let activeCount = 0;
+      let totalCount = 0;
+
+      ALL_TOOLS_SCHEMA.forEach(cat => {
+        const catFlags = platFlags[cat.categoryKey] || {};
+        cat.tools.forEach(tool => {
+          totalCount++;
+          if (catFlags[tool.id] !== false) {
+            activeCount++;
+          }
+        });
+      });
+
+      const badge = document.getElementById(`badge-flags-count-${plat}`);
+      if (badge) {
+        badge.textContent = `${activeCount}/${totalCount} Active`;
+      }
+    });
+  }
+
+  function renderFeatureFlagsUI(searchQuery = '') {
+    const container = document.getElementById('featureFlagsCategoriesContainer');
+    if (!container || !ecosystemState || !ecosystemState.featureFlags) return;
+
+    ensureFeatureFlagsStructure();
+    updatePlatformFlagsCounters();
+
+    const plat = currentFlagsPlatform || 'web';
+    const platFlags = ecosystemState.featureFlags[plat] || {};
+    const query = (searchQuery || '').trim().toLowerCase();
+
+    let renderedCategoriesCount = 0;
+    let html = '';
+
+    ALL_TOOLS_SCHEMA.forEach(cat => {
+      const catFlags = platFlags[cat.categoryKey] || {};
+
+      // Filter tools based on search query
+      const matchingTools = cat.tools.filter(t => {
+        if (!query) return true;
+        return t.name.toLowerCase().includes(query) ||
+               t.desc.toLowerCase().includes(query) ||
+               t.id.toLowerCase().includes(query);
+      });
+
+      if (matchingTools.length === 0 && query) {
+        return; // Skip category if searching and nothing matches
+      }
+
+      renderedCategoriesCount++;
+
+      // Count active tools in this category
+      let catActiveCount = 0;
+      cat.tools.forEach(t => {
+        if (catFlags[t.id] !== false) catActiveCount++;
+      });
+
+      const toolsHtml = matchingTools.map(tool => {
+        const isEnabled = catFlags[tool.id] !== false;
+        return `
+          <div class="flag-row">
+            <div class="flag-label-col">
+              <h5>${escapeHtml(tool.name)}</h5>
+              <p>${escapeHtml(tool.desc)}</p>
+            </div>
+            <label class="switch-box mini-switch">
+              <input type="checkbox"
+                     id="flag-${plat}-${cat.categoryKey}-${tool.id}"
+                     ${isEnabled ? 'checked' : ''}
+                     onchange="togglePlatformFeatureFlag('${plat}', '${cat.categoryKey}', '${tool.id}', this.checked)">
+              <span class="slider-round"></span>
+            </label>
+          </div>
+        `;
+      }).join('');
+
+      html += `
+        <div class="flags-category-box">
+          <div class="category-header-row">
+            <h3>
+              <span>${cat.icon}</span>
+              <span>${escapeHtml(cat.title)}</span>
+            </h3>
+            <span class="category-count-badge" id="cat-badge-${cat.categoryKey}">${catActiveCount}/${cat.tools.length} Active</span>
+          </div>
+          <p style="font-size: 12.5px; color: var(--admin-muted); margin-bottom: 16px;">${escapeHtml(cat.description)}</p>
+          <div class="flags-items-list">
+            ${toolsHtml}
+          </div>
+        </div>
+      `;
+    });
+
+    if (renderedCategoriesCount === 0 && query) {
+      container.innerHTML = `
+        <div class="flags-category-box" style="text-align: center; padding: 48px 24px;">
+          <div style="font-size: 32px; margin-bottom: 12px;">🔍</div>
+          <h3 style="justify-content: center; margin-bottom: 6px;">No tools found matching "${escapeHtml(query)}"</h3>
+          <p style="color: var(--admin-muted); font-size: 13px;">Try searching for "PDF", "crop", "resize", "filters", or "converter".</p>
+        </div>
+      `;
+    } else {
+      container.innerHTML = html;
+    }
+  }
+
+  window.setFlagsPlatform = function (platKey) {
+    currentFlagsPlatform = platKey;
+    window.currentFlagsPlatform = platKey;
+
+    document.querySelectorAll('.platform-pill-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById(`btn-flags-plat-${platKey}`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    const searchInput = document.getElementById('flagsToolSearchInput');
+    const query = searchInput ? searchInput.value : '';
+    renderFeatureFlagsUI(query);
+  };
+
+  window.togglePlatformFeatureFlag = function (plat, category, toolId, isChecked) {
+    if (!ecosystemState.featureFlags[plat]) ecosystemState.featureFlags[plat] = {};
+    if (!ecosystemState.featureFlags[plat][category]) ecosystemState.featureFlags[plat][category] = {};
+    ecosystemState.featureFlags[plat][category][toolId] = isChecked;
+
+    updatePlatformFlagsCounters();
+
+    const cat = ALL_TOOLS_SCHEMA.find(c => c.categoryKey === category);
+    if (cat) {
+      let activeCount = 0;
+      cat.tools.forEach(t => {
+        if (ecosystemState.featureFlags[plat][category][t.id] !== false) activeCount++;
+      });
+      const badge = document.getElementById(`cat-badge-${category}`);
+      if (badge) badge.textContent = `${activeCount}/${cat.tools.length} Active`;
+    }
+
+    saveEcosystemState();
+  };
+
+  window.batchTogglePlatformFlags = function (plat, isEnabled) {
+    if (!ecosystemState.featureFlags[plat]) ecosystemState.featureFlags[plat] = {};
+    ALL_TOOLS_SCHEMA.forEach(cat => {
+      if (!ecosystemState.featureFlags[plat][cat.categoryKey]) ecosystemState.featureFlags[plat][cat.categoryKey] = {};
+      cat.tools.forEach(tool => {
+        ecosystemState.featureFlags[plat][cat.categoryKey][tool.id] = isEnabled;
+      });
+    });
+
+    saveEcosystemState();
+    const searchInput = document.getElementById('flagsToolSearchInput');
+    renderFeatureFlagsUI(searchInput ? searchInput.value : '');
+    showToast(`${plat === 'web' ? 'Web Studio' : 'Mobile App'}: All tools ${isEnabled ? 'enabled' : 'disabled'}!`, 'info');
+  };
+
+  window.filterFeatureFlags = function (query) {
+    renderFeatureFlagsUI(query);
+  };
+
   function getDefaultState() {
+    const makeFlags = () => ({
+      editTools: {
+        adjust: true, filters: true, crop: true, resize: true,
+        rotateFlip: true, compress: true, drawShapes: true, addText: true
+      },
+      convertTools: {
+        formatConverter: true, heicToJpg: true, svgToPng: true,
+        imageToPdf: true, imageToIco: true, imageToBase64: true
+      },
+      pdfTools: {
+        mergePdf: true, splitPdf: true, compressPdf: true,
+        pdfToImages: true, imagesToPdf: true, rotatePdf: true, deletePdfPages: true
+      },
+      community: {
+        leaderboard: true, supportModal: true, recentFiles: true
+      }
+    });
+
     return {
       system: { version: '1.0.0', lastUpdated: new Date().toISOString() },
       maintenance: {
@@ -264,10 +550,8 @@
         }
       },
       featureFlags: {
-        editTools: { adjust: true, filters: true, crop: true, resize: true, rotateFlip: true, blurFocus: true, drawShapes: true, addText: true },
-        convertTools: { formatConverter: true, svgToPng: true, heicToJpg: true, imageToPdf: true, imageToIco: true, imageToBase64: true },
-        pdfTools: { mergePdf: true, splitPdf: true, compressPdf: true, pdfToImages: true, rotatePdf: true, deletePdfPages: true },
-        community: { leaderboard: true, supportModal: true, allowNewDonations: true, showTotalCollection: true }
+        web: makeFlags(),
+        mobile: makeFlags()
       },
       broadcast: { enabled: false, headline: 'Welcome to PixKit Studio', message: '', actionUrl: '', dismissible: true },
       versionControl: {
@@ -339,15 +623,8 @@
     if (inputBody && document.activeElement !== inputBody) inputBody.value = msg.body || '';
     if (inputUptime && document.activeElement !== inputUptime) inputUptime.value = msg.estimatedUptime || '';
 
-    // 5. Feature Flags
-    const flags = ecosystemState.featureFlags || {};
-    ['editTools', 'convertTools', 'pdfTools', 'community'].forEach(cat => {
-      const group = flags[cat] || {};
-      Object.keys(group).forEach(key => {
-        const cb = document.getElementById(`flag-${cat}-${key}`);
-        if (cb) cb.checked = !!group[key];
-      });
-    });
+    // 5. Feature Flags (Granular Platform-Specific UI)
+    renderFeatureFlagsUI();
 
     // 6. Broadcast Fields
     const bc = ecosystemState.broadcast || {};
@@ -405,11 +682,7 @@
   };
 
   window.toggleFeatureFlag = function (cat, key, isEnabled) {
-    if (!ecosystemState.featureFlags[cat]) {
-      ecosystemState.featureFlags[cat] = {};
-    }
-    ecosystemState.featureFlags[cat][key] = isEnabled;
-    saveEcosystemState();
+    window.togglePlatformFeatureFlag(currentFlagsPlatform, cat, key, isEnabled);
   };
 
   window.updateBroadcast = function () {

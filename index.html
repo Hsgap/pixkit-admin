@@ -242,140 +242,40 @@
         </section>
 
         <!-- ================================================================= -->
-        <!-- TAB 2: GRANULAR FEATURE FLAGS -->
+        <!-- TAB 2: GRANULAR FEATURE FLAGS (Per-Platform: Web Studio & Mobile App) -->
         <!-- ================================================================= -->
         <section class="tab-view" id="tab-flags">
           <div class="view-header">
             <h2>Granular Feature Flags</h2>
-            <p>Selectively disable or enable individual tools without taking down the rest of the studio.</p>
+            <p>Selectively control individual tool availability per platform (Web Studio vs. Mobile App) without redeploying code.</p>
           </div>
 
-          <!-- Image Edit Tools -->
-          <div class="flags-category-box">
-            <h3>&#127912; Image Edit Tools</h3>
-            <div class="flags-items-list">
-              <div class="flag-row">
-                <div class="flag-label-col">
-                  <h5>Adjust Tones</h5>
-                  <p>Brightness, Contrast, Saturation</p>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="flag-editTools-adjust" checked onchange="toggleFeatureFlag('editTools', 'adjust', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
+          <!-- Platform Selector Bar -->
+          <div class="flags-platform-selector-bar">
+            <div class="flags-platforms-group">
+              <button type="button" class="platform-pill-btn active" id="btn-flags-plat-web" onclick="setFlagsPlatform('web')">
+                <span style="font-size: 16px;">🌐</span>
+                <span>Web Studio</span>
+                <span class="platform-pill-badge" id="badge-flags-count-web">24/24 Active</span>
+              </button>
 
-              <div class="flag-row">
-                <div class="flag-label-col">
-                  <h5>Preset Filters</h5>
-                  <p>Mono, Warm, Cool, Vintage</p>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="flag-editTools-filters" checked onchange="toggleFeatureFlag('editTools', 'filters', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
+              <button type="button" class="platform-pill-btn" id="btn-flags-plat-mobile" onclick="setFlagsPlatform('mobile')">
+                <span style="font-size: 16px;">📱</span>
+                <span>Mobile App</span>
+                <span class="platform-pill-badge" id="badge-flags-count-mobile">24/24 Active</span>
+              </button>
+            </div>
 
-              <div class="flag-row">
-                <div class="flag-label-col">
-                  <h5>Crop &amp; Aspect Ratio</h5>
-                  <p>Freeform &amp; Preset Ratios</p>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="flag-editTools-crop" checked onchange="toggleFeatureFlag('editTools', 'crop', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
-
-              <div class="flag-row">
-                <div class="flag-label-col">
-                  <h5>Resize &amp; Dimensions</h5>
-                  <p>Pixel Width &amp; Height scaling</p>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="flag-editTools-resize" checked onchange="toggleFeatureFlag('editTools', 'resize', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
+            <div class="flags-toolbar-right">
+              <input type="text" id="flagsToolSearchInput" class="flags-search-input" placeholder="Search tool by name or function..." oninput="filterFeatureFlags(this.value)">
+              <button type="button" class="flags-batch-btn" onclick="batchTogglePlatformFlags(currentFlagsPlatform, true)">Enable All</button>
+              <button type="button" class="flags-batch-btn" onclick="batchTogglePlatformFlags(currentFlagsPlatform, false)">Disable All</button>
             </div>
           </div>
 
-          <!-- Convert Tools -->
-          <div class="flags-category-box">
-            <h3>&#128260; Format Conversion Tools</h3>
-            <div class="flags-items-list">
-              <div class="flag-row">
-                <div class="flag-label-col">
-                  <h5>HEIC to JPG Converter</h5>
-                  <p>Apple HEIC/HEIF client decoding</p>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="flag-convertTools-heicToJpg" checked onchange="toggleFeatureFlag('convertTools', 'heicToJpg', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
-
-              <div class="flag-row">
-                <div class="flag-label-col">
-                  <h5>SVG to PNG Converter</h5>
-                  <p>Vector to raster client rendering</p>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="flag-convertTools-svgToPng" checked onchange="toggleFeatureFlag('convertTools', 'svgToPng', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
-
-              <div class="flag-row">
-                <div class="flag-label-col">
-                  <h5>Image to PDF</h5>
-                  <p>Bundles images into PDF pages</p>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="flag-convertTools-imageToPdf" checked onchange="toggleFeatureFlag('convertTools', 'imageToPdf', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- PDF Document Suite -->
-          <div class="flags-category-box">
-            <h3>&#128196; PDF Document Tools</h3>
-            <div class="flags-items-list">
-              <div class="flag-row">
-                <div class="flag-label-col">
-                  <h5>Merge PDF Files</h5>
-                  <p>Client-side PDF-Lib concatenation</p>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="flag-pdfTools-mergePdf" checked onchange="toggleFeatureFlag('pdfTools', 'mergePdf', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
-
-              <div class="flag-row">
-                <div class="flag-label-col">
-                  <h5>Split PDF Files</h5>
-                  <p>Extract single or range pages</p>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="flag-pdfTools-splitPdf" checked onchange="toggleFeatureFlag('pdfTools', 'splitPdf', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
-
-              <div class="flag-row">
-                <div class="flag-label-col">
-                  <h5>Compress PDF</h5>
-                  <p>DPI reduction &amp; image resampling</p>
-                </div>
-                <label class="switch-box mini-switch">
-                  <input type="checkbox" id="flag-pdfTools-compressPdf" checked onchange="toggleFeatureFlag('pdfTools', 'compressPdf', this.checked)">
-                  <span class="slider-round"></span>
-                </label>
-              </div>
-            </div>
+          <!-- Dynamic Categorized Tools Container -->
+          <div id="featureFlagsCategoriesContainer">
+            <!-- Dynamically populated by admin-core.js according to ALL_TOOLS_SCHEMA -->
           </div>
         </section>
 

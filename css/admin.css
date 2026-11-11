@@ -612,6 +612,130 @@ input:checked + .slider-round:before {
 }
 
 /* ==========================================================================
+   Feature Flags Platform Selector & Toolbar
+   ========================================================================== */
+.flags-platform-selector-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--admin-card);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-subtle);
+  flex-wrap: wrap;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.flags-platforms-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.platform-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  background: var(--admin-stage);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-muted);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.platform-pill-btn:hover {
+  color: var(--admin-ink);
+  background: var(--admin-card-hover);
+  border-color: var(--admin-border-focus);
+}
+
+.platform-pill-btn.active {
+  background: var(--admin-lime);
+  color: var(--admin-lime-text);
+  border-color: var(--admin-lime-border);
+  box-shadow: 0 4px 14px rgba(215, 243, 106, 0.35);
+  font-weight: 800;
+}
+
+.platform-pill-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.12);
+  color: inherit;
+}
+
+.flags-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.flags-search-input {
+  background: var(--admin-stage);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  color: var(--admin-ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  min-width: 220px;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.flags-search-input:focus {
+  border-color: var(--admin-border-focus);
+  background: var(--admin-surface);
+}
+
+.flags-batch-btn {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-stage);
+  color: var(--admin-ink);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.flags-batch-btn:hover {
+  background: var(--admin-card-hover);
+  border-color: var(--admin-border-focus);
+}
+
+.category-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.category-count-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  background: var(--admin-stage);
+  color: var(--admin-muted);
+  border: 1px solid var(--admin-border);
+}
+
+/* ==========================================================================
    Feature Flags Group Box
    ========================================================================== */
 .flags-category-box {
