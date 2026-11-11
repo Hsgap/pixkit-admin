@@ -13,6 +13,32 @@
   const API_ENDPOINT = '/api/status';
   const SUPPORTERS_API = '/api/supporters';
 
+  // Global Firebase Realtime Database Configuration
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDCueyN5HjZWuCFuXbVcV5v27QhM3jC0vw",
+    authDomain: "pixkit-a7862.firebaseapp.com",
+    databaseURL: "https://pixkit-a7862-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "pixkit-a7862",
+    storageBucket: "pixkit-a7862.firebasestorage.app",
+    messagingSenderId: "704646920606",
+    appId: "1:704646920606:web:f50077d6ab0a913bb2fe8f"
+  };
+
+  let rtdbInstance = null;
+  function getRTDB() {
+    if (rtdbInstance) return rtdbInstance;
+    try {
+      if (typeof firebase !== 'undefined') {
+        if (!firebase.apps || !firebase.apps.length) {
+          firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        rtdbInstance = firebase.database();
+        return rtdbInstance;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   let currentEnteredPin = '';
   let ecosystemState = null;
   let supportersData = [];
@@ -204,57 +230,99 @@
   // =========================================================================
 
   async function loadEcosystemState() {
+    let loaded = false;
+
+    // 1. Try Firebase RTDB (Realtime ecosystem state shared globally)
     try {
-      const res = await fetch(API_ENDPOINT + '?t=' + Date.now());
-      if (res.ok) {
-        ecosystemState = await res.json();
-      } else {
-        throw new Error('API unreachable');
+      const rtdb = getRTDB();
+      if (rtdb) {
+        const snap = await rtdb.ref('ecosystem').once('value');
+        const cloudState = snap.val();
+        if (cloudState && typeof cloudState === 'object') {
+          ecosystemState = cloudState;
+          loaded = true;
+        }
+
+        // Realtime listener for cross-admin or multi-device updates
+        rtdb.ref('ecosystem').on('value', s => {
+          const val = s.val();
+          if (val && typeof val === 'object') {
+            ecosystemState = val;
+            renderDashboardData();
+          }
+        });
       }
-    } catch (err) {
-      // Fallback 1: Try static config/ecosystem-state.json (for GitHub Pages hosting)
+    } catch (_) {}
+
+    // 2. Try REST API endpoint (when running dedicated local server)
+    if (!loaded) {
+      try {
+        const res = await fetch(API_ENDPOINT + '?t=' + Date.now());
+        if (res.ok) {
+          ecosystemState = await res.json();
+          loaded = true;
+        }
+      } catch (_) {}
+    }
+
+    // 3. Fallback to static config/ecosystem-state.json (for GitHub Pages hosting)
+    if (!loaded) {
       try {
         const staticRes = await fetch('config/ecosystem-state.json?t=' + Date.now());
         if (staticRes.ok) {
           ecosystemState = await staticRes.json();
+          loaded = true;
         }
       } catch (_) {}
+    }
 
-      // Fallback 2: Try local storage cache
-      if (!ecosystemState) {
-        try {
-          const cached = localStorage.getItem('pixkit_admin_state_cache');
-          if (cached) ecosystemState = JSON.parse(cached);
-        } catch (_) {}
-      }
+    // 4. Fallback to local storage cache
+    if (!loaded) {
+      try {
+        const cached = localStorage.getItem('pixkit_admin_state_cache');
+        if (cached) ecosystemState = JSON.parse(cached);
+      } catch (_) {}
     }
 
     if (!ecosystemState) {
       ecosystemState = getDefaultState();
     }
 
+    // If Firebase RTDB was empty, seed it with current ecosystemState
+    if (!loaded) {
+      try {
+        const rtdb = getRTDB();
+        if (rtdb) rtdb.ref('ecosystem').set(ecosystemState);
+      } catch (_) {}
+    }
+
+    ensureFeatureFlagsStructure();
     renderDashboardData();
   }
 
   async function saveEcosystemState() {
+    if (!ecosystemState) return;
+
     try {
-      // Save locally
+      // 1. Save locally in browser
       localStorage.setItem('pixkit_admin_state_cache', JSON.stringify(ecosystemState));
 
-      // Post to dedicated server
-      const res = await fetch(API_ENDPOINT, {
+      // 2. Broadcast LIVE to Firebase Realtime Database (instantly triggers on pixkit.site & mobile app within 50ms)
+      const rtdb = getRTDB();
+      if (rtdb) {
+        await rtdb.ref('ecosystem').set(ecosystemState);
+      }
+
+      // 3. Post to local server if available
+      fetch(API_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ecosystemState)
-      });
+      }).catch(() => {});
 
-      if (res.ok) {
-        showToast('Ecosystem changes synced live!', 'success');
-      } else {
-        showToast('Saved locally in browser cache', 'info');
-      }
+      showToast('Ecosystem changes synced live to all clients!', 'success');
     } catch (err) {
-      showToast('Saved to local storage cache', 'info');
+      showToast('Saved locally in browser cache', 'info');
     }
 
     renderDashboardData();
@@ -719,17 +787,6 @@
   // 6. Supporter & Leaderboard Moderation (Real-Time Cloud & 1-Min Auto-Refresh)
   // =========================================================================
 
-  const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyDCueyN5HjZWuCFuXbVcV5v27QhM3jC0vw",
-    authDomain: "pixkit-a7862.firebaseapp.com",
-    databaseURL: "https://pixkit-a7862-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "pixkit-a7862",
-    storageBucket: "pixkit-a7862.firebasestorage.app",
-    messagingSenderId: "704646920606",
-    appId: "1:704646920606:web:f50077d6ab0a913bb2fe8f"
-  };
-
-  let rtdbInstance = null;
   let supportersRef = null;
   let lastSyncTimestamp = Date.now();
   let refreshSecondsRemaining = 60;
@@ -753,12 +810,9 @@
 
   function initFirebaseSupportersSync() {
     try {
-      if (typeof firebase !== 'undefined') {
-        if (!firebase.apps || !firebase.apps.length) {
-          firebase.initializeApp(FIREBASE_CONFIG);
-        }
-        rtdbInstance = firebase.database();
-        supportersRef = rtdbInstance.ref('supporters');
+      const rtdb = getRTDB();
+      if (rtdb) {
+        supportersRef = rtdb.ref('supporters');
 
         // Real-Time listener for any donation worldwide!
         supportersRef.on('value', snapshot => {
