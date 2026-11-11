@@ -212,6 +212,46 @@
     updatePinDots();
   };
 
+  window.saveNewPin = function () {
+    const input = document.getElementById('newPinInput');
+    const newPin = input?.value?.trim();
+    if (!newPin || !/^\d{4}$/.test(newPin)) {
+      alert('Please enter a valid 4-digit numeric PIN (e.g. 1234).');
+      return;
+    }
+    try {
+      localStorage.setItem(PIN_STORAGE_KEY, newPin);
+      if (input) input.value = '';
+      showToast('🔒 Master Security PIN updated successfully!', 'success');
+    } catch (e) {
+      alert('Could not save PIN to storage: ' + e.message);
+    }
+  };
+
+  window.resetDefaultPin = function () {
+    if (confirm('Reset master security PIN back to default (7492)?')) {
+      try {
+        localStorage.removeItem(PIN_STORAGE_KEY);
+        const input = document.getElementById('newPinInput');
+        if (input) input.value = '';
+        showToast('Security PIN reset to default (7492).', 'info');
+      } catch (e) {
+        alert('Could not reset PIN: ' + e.message);
+      }
+    }
+  };
+
+  window.copySdkSnippet = function () {
+    const snippet = `<script src="https://pixkit.site/js/pixkit-remote.js"><\/script>\n<script>\n  PixKitRemote.init({\n    platform: window.Capacitor ? 'mobile' : 'web'\n  });\n<\/script>`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(snippet).then(() => {
+        showToast('📋 SDK integration snippet copied to clipboard!', 'success');
+      });
+    } else {
+      showToast('Copied!', 'info');
+    }
+  };
+
   // =========================================================================
   // 2. Tab Navigation
   // =========================================================================

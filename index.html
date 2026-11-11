@@ -681,29 +681,65 @@
         <section class="tab-view" id="tab-settings">
           <div class="view-header">
             <h2>Client SDK Integration &amp; Security</h2>
-            <p>How to connect your Web, Mobile, Tablet, and Desktop apps to this Admin Command Center.</p>
+            <p>Connect your Web Studio, Mobile App, and Desktop apps to this command center and manage admin credentials.</p>
           </div>
 
-          <div class="flags-category-box">
-            <h3>&#128279; 1-Line Drop-in Client SDK</h3>
+          <!-- Section 1: Real-time Cloud Infrastructure -->
+          <div class="flags-category-box" style="margin-bottom: 20px;">
+            <h3>☁️ Real-Time Cloud Infrastructure</h3>
             <p style="font-size: 13px; color: var(--admin-muted); margin-bottom: 14px;">
-              Add this single script tag into the <code>&lt;head&gt;</code> of any client app (<code>pixkit</code>, <code>pixkit-mobile</code>, <code>pixkit-pc</code>) to instantly connect it to this fleet command center:
+              All admin actions (kill switches, feature flags, broadcast alerts, and version policies) stream in real-time worldwide via Firebase Realtime Database.
             </p>
-            <pre style="background: #090B08; padding: 16px; border-radius: 10px; border: 1px solid var(--admin-border); font-family: var(--font-mono); font-size: 12.5px; color: var(--admin-lime); overflow-x: auto;">&lt;script src="/pixkit-admin/client-sdk/pixkit-remote.js"&gt;&lt;/script&gt;
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+              <div style="background: var(--admin-stage); border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 14px 18px;">
+                <span style="font-size: 11px; font-weight: 800; color: var(--admin-muted); text-transform: uppercase;">Active RTDB Cluster</span>
+                <div style="font-size: 13px; font-weight: 700; color: var(--admin-lime); margin-top: 4px; font-family: var(--font-mono); word-break: break-all;">pixkit-a7862-default-rtdb</div>
+                <span style="font-size: 11.5px; color: var(--admin-emerald); font-weight: 700;">● asia-southeast1 (Operational)</span>
+              </div>
+              <div style="background: var(--admin-stage); border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 14px 18px;">
+                <span style="font-size: 11px; font-weight: 800; color: var(--admin-muted); text-transform: uppercase;">Synced Nodes</span>
+                <div style="font-size: 13px; font-weight: 700; color: var(--admin-ink); margin-top: 4px;">/ecosystem &bull; /supporters &bull; /stats</div>
+                <span style="font-size: 11.5px; color: var(--admin-muted);">Bi-directional WebSocket streaming</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: 1-Line Drop-in Client SDK -->
+          <div class="flags-category-box" style="margin-bottom: 20px;">
+            <h3>🔗 1-Line Drop-in Client SDK</h3>
+            <p style="font-size: 13px; color: var(--admin-muted); margin-bottom: 14px;">
+              Add this script tag into the <code>&lt;head&gt;</code> of any client app (<code>pixkit.site</code>, <code>pixkit-mobile</code>, or Desktop builds) to instantly connect it to this fleet command center:
+            </p>
+            <div style="position: relative;">
+              <pre style="background: #090B08; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--admin-border); font-family: var(--font-mono); font-size: 12.5px; color: var(--admin-lime); overflow-x: auto; line-height: 1.6;">&lt;!-- PixKit Remote Fleet SDK --&gt;
+&lt;script src="https://pixkit.site/js/pixkit-remote.js"&gt;&lt;/script&gt;
 &lt;script&gt;
+  // Automatically listens to Firebase RTDB &amp; enforces maintenance, alerts, flags, and version policies
   PixKitRemote.init({
-    configUrl: 'http://localhost:3001/api/status'
+    platform: window.Capacitor ? 'mobile' : 'web'
   });
 &lt;/script&gt;</pre>
+              <button type="button" class="table-btn" onclick="copySdkSnippet()" style="position: absolute; top: 12px; right: 12px; padding: 6px 14px; font-size: 11.5px; font-weight: 800;" id="btnCopySdk">
+                📋 Copy Snippet
+              </button>
+            </div>
           </div>
 
+          <!-- Section 3: Security PIN Change -->
           <div class="flags-category-box">
-            <h3>&#128274; Security PIN Change</h3>
-            <p style="font-size: 13px; color: var(--admin-muted); margin-bottom: 14px;">Update the 4-digit master PIN code required to open this dashboard.</p>
-            <div style="display:flex; gap:12px;">
+            <h3>🔒 Security PIN &amp; Session Access</h3>
+            <p style="font-size: 13px; color: var(--admin-muted); margin-bottom: 14px;">
+              Update the 4-digit master PIN required to unlock this dashboard when a session is locked.
+            </p>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom: 16px;">
               <input type="password" id="newPinInput" maxlength="4" class="table-search-input" style="width: 140px; text-align: center; font-size: 18px; letter-spacing: 4px;" placeholder="****">
               <button type="button" class="save-sync-btn" onclick="saveNewPin()">Save New PIN</button>
+              <button type="button" class="table-btn danger" onclick="resetDefaultPin()" title="Restore original PIN">Reset Default (7492)</button>
+              <button type="button" class="table-btn" onclick="lockAdminSession()" style="margin-left: auto;">🔒 Lock Session Now</button>
             </div>
+            <p style="font-size: 12px; color: var(--admin-muted); margin: 0;">
+              Tip: Default master PIN is <code style="color: var(--admin-lime); font-family: var(--font-mono);">7492</code>. Stored locally on this authorized device.
+            </p>
           </div>
         </section>
 
