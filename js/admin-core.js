@@ -1208,10 +1208,13 @@
           <td><span class="platform-status-tag status-live">${escapeHtml(s.badge || 'Supporter')}</span></td>
           <td>${dateStr}</td>
           <td>
-            <button class="table-btn" onclick="toggleHideSupporter('${s.id}')">
+            <button class="table-btn" onclick="openEditSupporterModal('${s.id}')" title="Edit supporter name, amount, badge, or note">
+              Edit
+            </button>
+            <button class="table-btn" onclick="toggleHideSupporter('${s.id}')" title="${isHidden ? 'Show on public leaderboard' : 'Hide from public leaderboard'}">
               ${isHidden ? 'Unhide' : 'Hide'}
             </button>
-            <button class="table-btn danger" onclick="deleteSupporter('${s.id}')">
+            <button class="table-btn danger" onclick="deleteSupporter('${s.id}')" title="Delete permanently">
               Delete
             </button>
           </td>
@@ -1219,6 +1222,123 @@
       `;
     }).join('');
   }
+
+  // Calculate supporter badge based on normalized USD
+  function calculateSupporterBadge(amount, currency) {
+    let usd = Number(amount) || 0;
+    if (currency === 'INR') usd = usd / 85;
+    else if (currency === 'EUR') usd = usd / 0.92;
+    else if (currency === 'GBP') usd = usd / 0.78;
+
+    if (usd >= 50) return 'Patron';
+    if (usd >= 15) return 'Backer';
+    return 'Supporter';
+  }
+
+  window.openAddSupporterModal = function () {
+    const overlay = document.getElementById('supporterModalOverlay');
+    const form = document.getElementById('supporterModalForm');
+    const title = document.getElementById('supporterModalTitle');
+    if (!overlay || !form) return;
+
+    form.reset();
+    document.getElementById('modalSupporterId').value = '';
+    if (title) title.textContent = '+ Add Manual Sponsor';
+    document.getElementById('modalSupporterAmount').value = '25.00';
+    document.getElementById('modalSupporterCurrency').value = 'USD';
+    document.getElementById('modalSupporterBadge').value = 'Auto';
+    document.getElementById('modalSupporterHidden').checked = false;
+
+    overlay.style.display = 'flex';
+    setTimeout(() => {
+      document.getElementById('modalSupporterName')?.focus();
+    }, 50);
+  };
+  window.addManualSupporter = window.openAddSupporterModal;
+
+  window.openEditSupporterModal = function (id) {
+    const sup = supportersData.find(s => s.id === id);
+    if (!sup) return;
+
+    const overlay = document.getElementById('supporterModalOverlay');
+    const title = document.getElementById('supporterModalTitle');
+    if (!overlay) return;
+
+    document.getElementById('modalSupporterId').value = sup.id;
+    if (title) title.textContent = `Edit Supporter — ${sup.name || 'Anonymous'}`;
+
+    document.getElementById('modalSupporterName').value = sup.name || '';
+    document.getElementById('modalSupporterAmount').value = Number(sup.amount) || '';
+    document.getElementById('modalSupporterCurrency').value = sup.currency || 'USD';
+    document.getElementById('modalSupporterBadge').value = sup.badge || 'Auto';
+    document.getElementById('modalSupporterNote').value = sup.note || '';
+    document.getElementById('modalSupporterHidden').checked = sup.hidden === true;
+
+    overlay.style.display = 'flex';
+    setTimeout(() => {
+      document.getElementById('modalSupporterName')?.focus();
+    }, 50);
+  };
+
+  window.closeSupporterModal = function () {
+    const overlay = document.getElementById('supporterModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+  };
+
+  window.handleSupporterModalBackdrop = function (e) {
+    if (e.target.id === 'supporterModalOverlay') {
+      window.closeSupporterModal();
+    }
+  };
+
+  window.handleSaveSupporterModal = async function (e) {
+    e.preventDefault();
+    const id = document.getElementById('modalSupporterId').value;
+    const name = (document.getElementById('modalSupporterName').value || '').trim() || 'Anonymous Supporter';
+    const amount = parseFloat(document.getElementById('modalSupporterAmount').value) || 0;
+    const currency = document.getElementById('modalSupporterCurrency').value || 'USD';
+    let badge = document.getElementById('modalSupporterBadge').value || 'Auto';
+    if (badge === 'Auto') {
+      badge = calculateSupporterBadge(amount, currency);
+    }
+    const note = (document.getElementById('modalSupporterNote').value || '').trim();
+    const hidden = document.getElementById('modalSupporterHidden').checked;
+
+    if (id) {
+      // Editing existing supporter
+      const existing = supportersData.find(s => s.id === id);
+      if (existing) {
+        existing.name = name;
+        existing.amount = amount;
+        existing.currency = currency;
+        existing.badge = badge;
+        existing.note = note;
+        existing.hidden = hidden;
+        await saveSupportersData();
+        showToast(`Supporter "${name}" updated successfully!`, 'success');
+      }
+    } else {
+      // Adding new supporter
+      const newSup = {
+        id: 'sup_manual_' + Date.now(),
+        name: name,
+        amount: amount,
+        currency: currency,
+        badge: badge,
+        note: note,
+        timestamp: Date.now(),
+        platform: 'web',
+        verified: true,
+        hidden: hidden
+      };
+      supportersData.unshift(newSup);
+      await saveSupportersData();
+      showToast(`Added supporter "${name}" ($${amount})!`, 'success');
+    }
+
+    window.closeSupporterModal();
+    renderSupportersTable();
+  };
 
   window.toggleHideSupporter = function (id) {
     const item = supportersData.find(s => s.id === id);
@@ -1235,32 +1355,6 @@
       saveSupportersData();
       showToast('Record deleted', 'info');
     }
-  };
-
-  window.addManualSupporter = function () {
-    const name = prompt('Supporter Name:');
-    if (!name || !name.trim()) return;
-    const amountStr = prompt('Contribution Amount (USD):', '25');
-    if (amountStr === null) return;
-    const amount = parseFloat(amountStr) || 25;
-    const note = prompt('Optional Message / Note:') || '';
-
-    const newSup = {
-      id: 'sup_manual_' + Date.now(),
-      name: name.trim(),
-      amount: amount,
-      currency: 'USD',
-      badge: amount >= 50 ? 'Patron' : (amount >= 15 ? 'Backer' : 'Supporter'),
-      note: note.trim(),
-      timestamp: Date.now(),
-      platform: 'web',
-      verified: true,
-      hidden: false
-    };
-
-    supportersData.unshift(newSup);
-    saveSupportersData();
-    showToast(`Added manual sponsor ${newSup.name} ($${newSup.amount})!`, 'success');
   };
 
   window.exportSupportersCSV = function () {

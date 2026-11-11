@@ -484,6 +484,67 @@
 
   </div>
 
+  <!-- Supporter Edit & Add Modal Dialog -->
+  <div id="supporterModalOverlay" class="admin-modal-overlay" style="display: none;" onclick="handleSupporterModalBackdrop(event)">
+    <div class="admin-modal-box">
+      <div class="admin-modal-header">
+        <h3 id="supporterModalTitle">Edit Supporter</h3>
+        <button type="button" class="admin-modal-close-btn" onclick="closeSupporterModal()" title="Close">&times;</button>
+      </div>
+      <form id="supporterModalForm" onsubmit="handleSaveSupporterModal(event)">
+        <input type="hidden" id="modalSupporterId" value="">
+
+        <div class="modal-field-group">
+          <label for="modalSupporterName">Supporter Name / Handle</label>
+          <input type="text" id="modalSupporterName" class="admin-field-input" placeholder="e.g. Alex Morgan" required autocomplete="off">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="modal-field-group">
+            <label for="modalSupporterAmount">Amount</label>
+            <input type="number" id="modalSupporterAmount" class="admin-field-input" step="0.01" min="1" placeholder="25.00" required>
+          </div>
+          <div class="modal-field-group">
+            <label for="modalSupporterCurrency">Currency</label>
+            <select id="modalSupporterCurrency" class="admin-field-input" style="cursor: pointer;">
+              <option value="USD">USD ($)</option>
+              <option value="INR">INR (₹)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-field-group">
+          <label for="modalSupporterBadge">Badge Tier</label>
+          <select id="modalSupporterBadge" class="admin-field-input" style="cursor: pointer;">
+            <option value="Auto">Auto-calculate from amount</option>
+            <option value="Patron">Patron (Top Sponsor)</option>
+            <option value="Backer">Backer (Generous Backer)</option>
+            <option value="Supporter">Supporter (Coffee Supporter)</option>
+          </select>
+        </div>
+
+        <div class="modal-field-group">
+          <label for="modalSupporterNote">Donor Note / Quote</label>
+          <textarea id="modalSupporterNote" class="admin-field-input" rows="2" placeholder="Optional supportive note from donor..."></textarea>
+        </div>
+
+        <div class="modal-field-group" style="margin-bottom: 22px;">
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; text-transform: none; font-size: 13px; font-weight: 600; color: var(--admin-ink);">
+            <input type="checkbox" id="modalSupporterHidden" style="width: 16px; height: 16px; accent-color: var(--admin-lime); cursor: pointer;">
+            <span>Hide from public leaderboard (keep in internal analytics only)</span>
+          </label>
+        </div>
+
+        <div class="admin-modal-actions">
+          <button type="button" class="table-btn" onclick="closeSupporterModal()" style="padding: 10px 18px; font-size: 13px;">Cancel</button>
+          <button type="submit" class="table-btn" id="btnSaveSupporterModal" style="padding: 10px 22px; font-size: 13px; background: var(--admin-lime); color: var(--admin-lime-text); border-color: var(--admin-lime-border); font-weight: 800;">Save Supporter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Firebase Compat SDK for Global Real-Time Donation & Presence Sync -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
