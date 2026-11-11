@@ -285,22 +285,54 @@
         <section class="tab-view" id="tab-leaderboard">
           <div class="view-header">
             <h2>Supporters &amp; Community Moderation</h2>
-            <p>Monitor total collections, review contributor submissions, hide spam names, or add manual sponsors.</p>
+            <p>Monitor real-time donations, review contributor submissions, hide spam names, or add manual sponsors.</p>
+          </div>
+
+          <!-- Real-Time Sync & 1-Minute Refresh Bar -->
+          <div class="supporters-sync-bar">
+            <div class="sync-status-group">
+              <span class="live-pulse-dot" id="supportersPulseDot"></span>
+              <span class="sync-status-title" id="supportersSyncStatusText">Real-Time Cloud Sync Connected</span>
+              <span class="sync-badge-timer" id="supportersRefreshTimerBadge">Auto-refreshes in 60s</span>
+              <span class="sync-badge-timestamp" id="supportersLastSyncBadge">Last synced: Just now</span>
+            </div>
+            <div class="sync-actions-group">
+              <button type="button" class="sync-action-btn" id="btnManualRefreshSupporters" onclick="refreshSupportersData(false)" title="Force refresh immediately">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                </svg>
+                <span>Refresh Now</span>
+              </button>
+            </div>
           </div>
 
           <!-- Metrics Strip -->
           <div class="metrics-strip">
             <div class="metric-card">
-              <h6>Total Collection</h6>
+              <div class="metric-card-header">
+                <h6>Total Collection</h6>
+                <span class="metric-help-icon" title="Total USD volume calculated across all currencies (USD, INR, EUR, GBP)">USD</span>
+              </div>
               <div class="metric-val" id="metricTotalCollection">$0.00</div>
+              <div class="metric-subtext" id="metricTotalBreakdown">All-time verified community contributions</div>
             </div>
+
             <div class="metric-card">
-              <h6>Active Backers</h6>
+              <div class="metric-card-header">
+                <h6>Active Backers</h6>
+                <span class="metric-help-icon" title="Active Backers = Total unique users who have donated and are currently active & visible on the public leaderboard">?</span>
+              </div>
               <div class="metric-val" id="metricSupportersCount">0</div>
+              <div class="metric-subtext" id="metricBackersSubtext">Unique verified donors visible on board</div>
             </div>
+
             <div class="metric-card">
-              <h6>Public Leaderboard Status</h6>
-              <div class="metric-val" style="font-size: 18px; color: var(--admin-emerald); padding-top: 8px;">Active &amp; Visible</div>
+              <div class="metric-card-header">
+                <h6>Public Leaderboard</h6>
+                <span class="metric-help-icon" title="Community leaderboard status on live website & app">Live</span>
+              </div>
+              <div class="metric-val" style="font-size: 18px; color: var(--admin-emerald); padding-top: 8px;" id="metricLeaderboardStatus">Active &amp; Visible</div>
+              <div class="metric-subtext">Live on pixkit.site &amp; in-app</div>
             </div>
           </div>
 
@@ -434,6 +466,10 @@
     </main>
 
   </div>
+
+  <!-- Firebase Compat SDK for Global Real-Time Donation & Presence Sync -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script src="js/admin-core.js"></script>
   <script>

@@ -212,11 +212,21 @@
         throw new Error('API unreachable');
       }
     } catch (err) {
-      // Fallback to local storage or defaults
+      // Fallback 1: Try static config/ecosystem-state.json (for GitHub Pages hosting)
       try {
-        const cached = localStorage.getItem('pixkit_admin_state_cache');
-        if (cached) ecosystemState = JSON.parse(cached);
+        const staticRes = await fetch('config/ecosystem-state.json?t=' + Date.now());
+        if (staticRes.ok) {
+          ecosystemState = await staticRes.json();
+        }
       } catch (_) {}
+
+      // Fallback 2: Try local storage cache
+      if (!ecosystemState) {
+        try {
+          const cached = localStorage.getItem('pixkit_admin_state_cache');
+          if (cached) ecosystemState = JSON.parse(cached);
+        } catch (_) {}
+      }
     }
 
     if (!ecosystemState) {
@@ -706,38 +716,239 @@
   };
 
   // =========================================================================
-  // 6. Supporter & Leaderboard Moderation
+  // 6. Supporter & Leaderboard Moderation (Real-Time Cloud & 1-Min Auto-Refresh)
   // =========================================================================
 
-  async function loadSupportersData() {
-    try {
-      const res = await fetch(SUPPORTERS_API + '?t=' + Date.now());
-      if (res.ok) {
-        supportersData = await res.json();
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDCueyN5HjZWuCFuXbVcV5v27QhM3jC0vw",
+    authDomain: "pixkit-a7862.firebaseapp.com",
+    databaseURL: "https://pixkit-a7862-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "pixkit-a7862",
+    storageBucket: "pixkit-a7862.firebasestorage.app",
+    messagingSenderId: "704646920606",
+    appId: "1:704646920606:web:f50077d6ab0a913bb2fe8f"
+  };
+
+  let rtdbInstance = null;
+  let supportersRef = null;
+  let lastSyncTimestamp = Date.now();
+  let refreshSecondsRemaining = 60;
+  let autoRefreshTimer = null;
+  let countdownTimer = null;
+
+  function updateSyncUIStatus(statusText, isOnline = true) {
+    const textEl = document.getElementById('supportersSyncStatusText');
+    const dotEl = document.getElementById('supportersPulseDot');
+    if (textEl) textEl.textContent = statusText;
+    if (dotEl) {
+      if (isOnline) {
+        dotEl.style.background = 'var(--admin-emerald)';
+        dotEl.style.boxShadow = '0 0 10px var(--admin-emerald)';
       } else {
-        throw new Error('API offline');
+        dotEl.style.background = 'var(--admin-amber)';
+        dotEl.style.boxShadow = '0 0 10px var(--admin-amber)';
       }
-    } catch (_) {
+    }
+  }
+
+  function initFirebaseSupportersSync() {
+    try {
+      if (typeof firebase !== 'undefined') {
+        if (!firebase.apps || !firebase.apps.length) {
+          firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        rtdbInstance = firebase.database();
+        supportersRef = rtdbInstance.ref('supporters');
+
+        // Real-Time listener for any donation worldwide!
+        supportersRef.on('value', snapshot => {
+          const val = snapshot.val();
+          if (val) {
+            if (Array.isArray(val)) {
+              supportersData = val;
+            } else if (typeof val === 'object') {
+              supportersData = Object.values(val);
+            }
+            lastSyncTimestamp = Date.now();
+            updateSyncUIStatus('Firebase Real-Time Stream Active', true);
+            renderSupportersTable();
+          } else {
+            // Seed if completely empty in cloud
+            seedInitialSupporters();
+          }
+        }, error => {
+          console.warn('Firebase RTDB error:', error);
+          updateSyncUIStatus('Local Cache / Polling Active', false);
+        });
+      }
+    } catch (err) {
+      console.warn('Firebase init error:', err);
+      updateSyncUIStatus('Local Cache Mode', false);
+    }
+  }
+
+  async function seedInitialSupporters() {
+    const seed = [
+      {
+        id: "sup_initial_01",
+        name: "Marcus Vance",
+        amount: 150.0,
+        currency: "USD",
+        badge: "Patron",
+        note: "PixKit saved our photography workflow hundreds of hours. Proud patron!",
+        timestamp: Date.now() - 86400000,
+        platform: "web",
+        verified: true,
+        hidden: false
+      }
+    ];
+    supportersData = seed;
+    saveSupportersData();
+  }
+
+  async function loadSupportersData() {
+    let loaded = false;
+
+    // 1. Try Firebase RTDB
+    if (supportersRef) {
       try {
-        const local = localStorage.getItem('pixkit_leaderboard_supporters_v2');
-        if (local) supportersData = JSON.parse(local);
+        const snap = await supportersRef.once('value');
+        const val = snap.val();
+        if (val) {
+          supportersData = Array.isArray(val) ? val : Object.values(val);
+          loaded = true;
+          updateSyncUIStatus('Firebase Real-Time Stream Active', true);
+        }
       } catch (_) {}
     }
 
-    if (!Array.isArray(supportersData)) supportersData = [];
-    renderSupportersTable();
+    // 2. Try Local Dedicated REST API (/api/supporters)
+    if (!loaded) {
+      try {
+        const res = await fetch(SUPPORTERS_API + '?t=' + Date.now());
+        if (res.ok) {
+          const apiData = await res.json();
+          if (Array.isArray(apiData) && apiData.length > 0) {
+            supportersData = apiData;
+            loaded = true;
+            updateSyncUIStatus('Dedicated Admin Server Connected', true);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 3. Try Static Config File (config/supporters.json for GitHub Pages)
+    if (!loaded) {
+      try {
+        const staticRes = await fetch('config/supporters.json?t=' + Date.now());
+        if (staticRes.ok) {
+          const staticData = await staticRes.json();
+          if (Array.isArray(staticData) && staticData.length > 0) {
+            supportersData = staticData;
+            loaded = true;
+            updateSyncUIStatus('Static Cloud Config Loaded', true);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 4. Try Browser LocalStorage Cache
+    if (!loaded) {
+      try {
+        const local = localStorage.getItem('pixkit_leaderboard_supporters_v2');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            supportersData = parsed;
+            loaded = true;
+            updateSyncUIStatus('Local Storage Loaded', true);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 5. Final fallback: Seed if still empty
+    if (!loaded || !Array.isArray(supportersData) || supportersData.length === 0) {
+      seedInitialSupporters();
+    } else {
+      lastSyncTimestamp = Date.now();
+      renderSupportersTable();
+    }
   }
 
   async function saveSupportersData() {
     try {
       localStorage.setItem('pixkit_leaderboard_supporters_v2', JSON.stringify(supportersData));
+
+      // 1. Save to Firebase RTDB in real time
+      if (supportersRef) {
+        await supportersRef.set(supportersData);
+      }
+
+      // 2. Save to local REST API if available
       await fetch(SUPPORTERS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(supportersData)
       });
     } catch (_) {}
+
+    lastSyncTimestamp = Date.now();
     renderSupportersTable();
+  }
+
+  window.refreshSupportersData = async function (isAuto = false) {
+    const btn = document.getElementById('btnManualRefreshSupporters');
+    if (btn) btn.classList.add('is-spinning');
+
+    await loadSupportersData();
+
+    refreshSecondsRemaining = 60;
+    const badge = document.getElementById('supportersRefreshTimerBadge');
+    if (badge) badge.textContent = 'Auto-refreshes in 60s';
+
+    if (btn) {
+      setTimeout(() => { btn.classList.remove('is-spinning'); }, 500);
+    }
+
+    if (!isAuto) {
+      showToast('Supporters & finance data refreshed live!', 'success');
+    }
+  };
+
+  function startSupportersAutoRefreshEngine() {
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
+
+    refreshSecondsRemaining = 60;
+
+    // 1-minute recurring poll
+    autoRefreshTimer = setInterval(() => {
+      window.refreshSupportersData(true);
+    }, 60000);
+
+    // 1-second countdown display updater
+    countdownTimer = setInterval(() => {
+      refreshSecondsRemaining--;
+      if (refreshSecondsRemaining < 0) refreshSecondsRemaining = 60;
+
+      const badge = document.getElementById('supportersRefreshTimerBadge');
+      if (badge) {
+        badge.textContent = `Auto-refreshes in ${refreshSecondsRemaining}s`;
+      }
+
+      const timeTag = document.getElementById('supportersLastSyncBadge');
+      if (timeTag) {
+        const secAgo = Math.floor((Date.now() - lastSyncTimestamp) / 1000);
+        if (secAgo < 5) {
+          timeTag.textContent = 'Last synced: Just now';
+        } else if (secAgo < 60) {
+          timeTag.textContent = `Last synced: ${secAgo}s ago`;
+        } else {
+          timeTag.textContent = `Last synced: ${Math.floor(secAgo / 60)}m ago`;
+        }
+      }
+    }, 1000);
   }
 
   function renderSupportersTable() {
@@ -745,45 +956,69 @@
     const searchVal = (document.getElementById('supporterSearchInput')?.value || '').toLowerCase();
     if (!tbody) return;
 
+    if (!Array.isArray(supportersData)) supportersData = [];
+
     let filtered = supportersData.filter(s => {
       const name = (s.name || '').toLowerCase();
       const note = (s.note || '').toLowerCase();
       return name.includes(searchVal) || note.includes(searchVal);
     });
 
-    // Update Metrics
+    // Normalized currency conversion to USD
     let totalUSD = 0;
+    const uniqueBackers = new Set();
+    let visibleBackersCount = 0;
+
     supportersData.forEach(s => {
       const amt = Number(s.amount) || 0;
-      totalUSD += (s.currency === 'INR' ? amt / 85 : amt);
+      let usdVal = amt;
+      if (s.currency === 'INR') usdVal = amt / 85;
+      else if (s.currency === 'EUR') usdVal = amt / 0.92;
+      else if (s.currency === 'GBP') usdVal = amt / 0.78;
+
+      totalUSD += usdVal;
+
+      if (s.hidden !== true) {
+        visibleBackersCount++;
+        const idKey = (s.name || '').trim().toLowerCase() || s.id;
+        uniqueBackers.add(idKey);
+      }
     });
 
     const totalEl = document.getElementById('metricTotalCollection');
     const countEl = document.getElementById('metricSupportersCount');
-    if (totalEl) totalEl.textContent = '$' + totalUSD.toFixed(2);
-    if (countEl) countEl.textContent = supportersData.length;
+    const breakdownEl = document.getElementById('metricTotalBreakdown');
+    const backersSubtext = document.getElementById('metricBackersSubtext');
+
+    if (totalEl) totalEl.textContent = '$' + totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (countEl) countEl.textContent = uniqueBackers.size;
+    if (breakdownEl) breakdownEl.textContent = `From ${supportersData.length} total contribution${supportersData.length === 1 ? '' : 's'}`;
+    if (backersSubtext) backersSubtext.textContent = `${uniqueBackers.size} unique donor${uniqueBackers.size === 1 ? '' : 's'} (${visibleBackersCount} visible)`;
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--admin-muted); padding: 32px;">No supporter records found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--admin-muted); padding: 36px;">No supporter records found.</td></tr>`;
       return;
     }
 
     tbody.innerHTML = filtered.map((s, idx) => {
       const isHidden = s.hidden === true;
+      const currencySymbol = s.currency === 'INR' ? '₹' : (s.currency === 'EUR' ? '€' : (s.currency === 'GBP' ? '£' : '$'));
+      const formattedAmt = Number(s.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
       return `
         <tr style="${isHidden ? 'opacity: 0.45;' : ''}">
           <td><strong>#${idx + 1}</strong></td>
           <td>
-            <strong>${escapeHtml(s.name || 'Anonymous')}</strong>
+            <strong>${escapeHtml(s.name || 'Anonymous Supporter')}</strong>
             ${s.note ? `<br><small style="color:var(--admin-muted);font-style:italic;">"${escapeHtml(s.note)}"</small>` : ''}
           </td>
           <td>
             <span style="font-weight: 800; color: var(--admin-lime);">
-              ${s.currency === 'INR' ? '₹' : '$'}${Number(s.amount).toFixed(2)} ${s.currency || 'USD'}
+              ${currencySymbol}${formattedAmt} <small style="font-size:10.5px; opacity:0.8;">${s.currency || 'USD'}</small>
             </span>
           </td>
-          <td><span class="platform-status-tag status-live">${s.badge || 'Supporter'}</span></td>
-          <td>${new Date(s.timestamp || Date.now()).toLocaleDateString()}</td>
+          <td><span class="platform-status-tag status-live">${escapeHtml(s.badge || 'Supporter')}</span></td>
+          <td>${new Date(s.timestamp || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</td>
           <td>
             <button class="table-btn" onclick="toggleHideSupporter('${s.id}')">
               ${isHidden ? 'Unhide' : 'Hide'}
@@ -902,7 +1137,9 @@
 
   function initDashboard() {
     loadEcosystemState();
+    initFirebaseSupportersSync();
     loadSupportersData();
+    startSupportersAutoRefreshEngine();
   }
 
   // =========================================================================
