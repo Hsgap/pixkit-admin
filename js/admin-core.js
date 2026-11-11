@@ -1123,10 +1123,10 @@
 
       totalUSD += usdVal;
 
+      const idKey = (s.name || '').trim().toLowerCase() || s.id;
+      uniqueBackers.add(idKey);
       if (s.hidden !== true) {
         visibleBackersCount++;
-        const idKey = (s.name || '').trim().toLowerCase() || s.id;
-        uniqueBackers.add(idKey);
       }
     });
 
@@ -1145,11 +1145,12 @@
     };
     const tfLabel = tfLabels[currentSupportersTimeframe] || 'All-time';
 
+    const anonymousCount = timeframeSupporters.length - visibleBackersCount;
     if (breakdownEl) {
-      breakdownEl.textContent = `${tfLabel} • ${timeframeSupporters.length} contribution${timeframeSupporters.length === 1 ? '' : 's'}`;
+      breakdownEl.textContent = `${tfLabel} • ${timeframeSupporters.length} contribution${timeframeSupporters.length === 1 ? '' : 's'}${anonymousCount > 0 ? ` (${visibleBackersCount} visible on board, ${anonymousCount} anonymous)` : ''}`;
     }
     if (backersSubtext) {
-      backersSubtext.textContent = `${uniqueBackers.size} unique donor${uniqueBackers.size === 1 ? '' : 's'} (${visibleBackersCount} visible)`;
+      backersSubtext.textContent = `${uniqueBackers.size} unique donor${uniqueBackers.size === 1 ? '' : 's'} (${visibleBackersCount} visible on leaderboard)`;
     }
 
     updateLeaderboardMetricStatus();
@@ -1194,10 +1195,11 @@
       const dateStr = new Date(s.timestamp || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
       return `
-        <tr style="${isHidden ? 'opacity: 0.45;' : ''}">
+        <tr style="${isHidden ? 'opacity: 0.75; background: rgba(245, 158, 11, 0.03);' : ''}">
           <td><strong>#${idx + 1}</strong></td>
           <td>
             <strong>${escapeHtml(s.name || 'Anonymous Supporter')}</strong>
+            ${isHidden ? '<span class="platform-status-tag" style="margin-left: 8px; font-size: 10px; background: rgba(245, 158, 11, 0.15); color: var(--admin-amber); border-color: rgba(245, 158, 11, 0.3);">Anonymous (Unlisted)</span>' : ''}
             ${s.note ? `<br><small style="color:var(--admin-muted);font-style:italic;">"${escapeHtml(s.note)}"</small>` : ''}
           </td>
           <td>
