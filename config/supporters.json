@@ -1,14 +1,1 @@
-[
-  {
-    "id": "sup_initial_01",
-    "name": "Marcus Vance",
-    "amount": 150.0,
-    "currency": "USD",
-    "badge": "Patron",
-    "note": "PixKit saved our photography workflow hundreds of hours. Proud patron!",
-    "timestamp": 1794149710898,
-    "platform": "web",
-    "verified": true,
-    "hidden": false
-  }
-]
+[]

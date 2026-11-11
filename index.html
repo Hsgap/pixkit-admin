@@ -329,10 +329,31 @@
             <div class="metric-card">
               <div class="metric-card-header">
                 <h6>Public Leaderboard</h6>
-                <span class="metric-help-icon" title="Community leaderboard status on live website & app">Live</span>
+                <span class="metric-help-icon" title="Community leaderboard status on live website">Live</span>
               </div>
-              <div class="metric-val" style="font-size: 18px; color: var(--admin-emerald); padding-top: 8px;" id="metricLeaderboardStatus">Active &amp; Visible</div>
-              <div class="metric-subtext">Live on pixkit.site &amp; in-app</div>
+              <div class="metric-val" style="font-size: 18px; padding-top: 8px;" id="metricLeaderboardStatus">Loading...</div>
+              <div class="metric-subtext" id="metricLeaderboardSubtext">Checking live status...</div>
+            </div>
+          </div>
+
+          <!-- Timeframe Filter Strip (All-Time / Yearly, Monthly, Weekly) -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="font-size: 11.5px; font-weight: 800; color: var(--admin-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">Filter Timeframe:</span>
+              <button type="button" class="timeframe-pill-btn active" id="btn-tf-all" onclick="setSupportersTimeframe('all')">
+                <span>All Time (Yearly)</span>
+              </button>
+              <button type="button" class="timeframe-pill-btn" id="btn-tf-month" onclick="setSupportersTimeframe('monthly')">
+                <span>This Month</span>
+              </button>
+              <button type="button" class="timeframe-pill-btn" id="btn-tf-week" onclick="setSupportersTimeframe('weekly')">
+                <span>This Week</span>
+              </button>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button type="button" class="table-btn danger" onclick="clearAllSupportersMockups()" title="Clear any test or mock supporter entries">Clear Mockups</button>
+              <button type="button" class="table-btn" onclick="addManualSupporter()">+ Add Manual Sponsor</button>
+              <button type="button" class="table-btn" onclick="exportSupportersCSV()">Export CSV</button>
             </div>
           </div>
 
@@ -340,10 +361,6 @@
           <div class="admin-table-wrap">
             <div class="table-action-bar">
               <input type="text" id="supporterSearchInput" class="table-search-input" placeholder="Search by supporter name or message..." oninput="filterSupportersTable()">
-              <div style="display:flex; gap:10px;">
-                <button type="button" class="table-btn" onclick="addManualSupporter()">+ Add Manual Sponsor</button>
-                <button type="button" class="table-btn" onclick="exportSupportersCSV()">Export CSV</button>
-              </div>
             </div>
 
             <table class="admin-data-table">

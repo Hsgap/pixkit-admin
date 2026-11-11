@@ -22,20 +22,7 @@ os.makedirs(os.path.join(BASE_DIR, 'config'), exist_ok=True)
 # Initialize supporters file if missing
 if not os.path.exists(SUPPORTERS_FILE):
     with open(SUPPORTERS_FILE, 'w') as f:
-        json.dump([
-            {
-                "id": "sup_initial_01",
-                "name": "Marcus Vance",
-                "amount": 150.00,
-                "currency": "USD",
-                "badge": "Patron",
-                "note": "PixKit saved our photography workflow hundreds of hours. Proud patron!",
-                "timestamp": int(time.time() * 1000) - 172800000,
-                "platform": "web",
-                "verified": True,
-                "hidden": False
-            }
-        ], f, indent=2)
+        json.dump([], f, indent=2)
 
 class PixKitAdminHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):

@@ -587,6 +587,10 @@
       if (badge) badge.textContent = `${activeCount}/${totalCount} Active`;
     }
 
+    if (category === 'community' && toolId === 'leaderboard') {
+      updateLeaderboardMetricStatus();
+    }
+
     saveEcosystemState();
   };
 
@@ -736,6 +740,9 @@
     if (mobMin && document.activeElement !== mobMin) mobMin.value = vc.mobile?.minSupportedVersion || '';
     if (mobLatest && document.activeElement !== mobLatest) mobLatest.value = vc.mobile?.latestVersion || '';
     if (mobForce) mobForce.checked = !!vc.mobile?.forceUpdate;
+
+    // 8. Public Leaderboard status in Supporters card
+    updateLeaderboardMetricStatus();
   }
 
   // =========================================================================
@@ -827,22 +834,22 @@
       if (rtdb) {
         supportersRef = rtdb.ref('supporters');
 
-        // Real-Time listener for any donation worldwide!
+        // Real-Time listener for any donation worldwide
         supportersRef.on('value', snapshot => {
           const val = snapshot.val();
           if (val) {
-            if (Array.isArray(val)) {
-              supportersData = val;
-            } else if (typeof val === 'object') {
-              supportersData = Object.values(val);
+            let list = Array.isArray(val) ? val : Object.values(val);
+            // Purge dummy mockups like Marcus Vance or sup_initial_01
+            supportersData = list.filter(s => s && s.id !== 'sup_initial_01' && s.name !== 'Marcus Vance');
+            if (supportersData.length !== list.length) {
+              supportersRef.set(supportersData);
             }
-            lastSyncTimestamp = Date.now();
-            updateSyncUIStatus('Firebase Real-Time Stream Active', true);
-            renderSupportersTable();
           } else {
-            // Seed if completely empty in cloud
-            seedInitialSupporters();
+            supportersData = [];
           }
+          lastSyncTimestamp = Date.now();
+          updateSyncUIStatus('Firebase Real-Time Stream Active', true);
+          renderSupportersTable();
         }, error => {
           console.warn('Firebase RTDB error:', error);
           updateSyncUIStatus('Local Cache / Polling Active', false);
@@ -854,24 +861,64 @@
     }
   }
 
-  async function seedInitialSupporters() {
-    const seed = [
-      {
-        id: "sup_initial_01",
-        name: "Marcus Vance",
-        amount: 150.0,
-        currency: "USD",
-        badge: "Patron",
-        note: "PixKit saved our photography workflow hundreds of hours. Proud patron!",
-        timestamp: Date.now() - 86400000,
-        platform: "web",
-        verified: true,
-        hidden: false
-      }
-    ];
-    supportersData = seed;
-    saveSupportersData();
+  let currentSupportersTimeframe = 'all'; // 'all' (Yearly / All-Time) | 'monthly' | 'weekly'
+  window.currentSupportersTimeframe = currentSupportersTimeframe;
+
+  window.setSupportersTimeframe = function (tf) {
+    currentSupportersTimeframe = tf;
+    window.currentSupportersTimeframe = tf;
+
+    ['all', 'monthly', 'weekly'].forEach(k => {
+      const btnId = `btn-tf-${k === 'all' ? 'all' : (k === 'monthly' ? 'month' : 'week')}`;
+      const btn = document.getElementById(btnId);
+      if (btn) btn.classList.toggle('active', k === tf);
+    });
+
+    renderSupportersTable();
+  };
+
+  function isWithinTimeframe(timestamp, timeframe) {
+    if (!timestamp || timeframe === 'all') return true;
+    const ts = typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
+    if (isNaN(ts) || ts <= 0) return true;
+
+    const now = Date.now();
+    if (timeframe === 'weekly') {
+      return (now - ts) <= (7 * 24 * 60 * 60 * 1000);
+    }
+    if (timeframe === 'monthly') {
+      return (now - ts) <= (30 * 24 * 60 * 60 * 1000);
+    }
+    return true;
   }
+
+  function updateLeaderboardMetricStatus() {
+    const statusEl = document.getElementById('metricLeaderboardStatus');
+    const subtextEl = document.getElementById('metricLeaderboardSubtext');
+    if (!statusEl || !subtextEl) return;
+
+    const isLive = ecosystemState?.featureFlags?.web?.community?.leaderboard !== false;
+
+    if (isLive) {
+      statusEl.innerHTML = '<span style="color: var(--admin-emerald); font-weight: 800;">● Active &amp; Visible</span>';
+      subtextEl.innerHTML = `Live on pixkit.site &nbsp;•&nbsp; <button type="button" onclick="quickToggleLeaderboard()" style="background:none; border:none; color:var(--admin-lime); text-decoration:underline; font-weight:700; cursor:pointer; font-size:12px; padding:0;">Pause</button>`;
+    } else {
+      statusEl.innerHTML = '<span style="color: var(--admin-amber); font-weight: 800;">○ Hidden / Paused</span>';
+      subtextEl.innerHTML = `Disabled on pixkit.site &nbsp;•&nbsp; <button type="button" onclick="quickToggleLeaderboard()" style="background:none; border:none; color:var(--admin-lime); text-decoration:underline; font-weight:700; cursor:pointer; font-size:12px; padding:0;">Turn On</button>`;
+    }
+  }
+  window.updateLeaderboardMetricStatus = updateLeaderboardMetricStatus;
+
+  window.quickToggleLeaderboard = async function () {
+    if (!ecosystemState) return;
+    ensureFeatureFlagsStructure();
+    const current = ecosystemState?.featureFlags?.web?.community?.leaderboard !== false;
+    ecosystemState.featureFlags.web.community.leaderboard = !current;
+    await saveEcosystemState();
+    updateLeaderboardMetricStatus();
+    renderFeatureFlagsUI();
+    showToast(`Public Leaderboard is now ${!current ? 'ENABLED' : 'PAUSED'} on pixkit.site!`, 'success');
+  };
 
   async function loadSupportersData() {
     let loaded = false;
@@ -882,7 +929,11 @@
         const snap = await supportersRef.once('value');
         const val = snap.val();
         if (val) {
-          supportersData = Array.isArray(val) ? val : Object.values(val);
+          let list = Array.isArray(val) ? val : Object.values(val);
+          supportersData = list.filter(s => s && s.id !== 'sup_initial_01' && s.name !== 'Marcus Vance');
+          if (supportersData.length !== list.length) {
+            supportersRef.set(supportersData);
+          }
           loaded = true;
           updateSyncUIStatus('Firebase Real-Time Stream Active', true);
         }
@@ -895,8 +946,8 @@
         const res = await fetch(SUPPORTERS_API + '?t=' + Date.now());
         if (res.ok) {
           const apiData = await res.json();
-          if (Array.isArray(apiData) && apiData.length > 0) {
-            supportersData = apiData;
+          if (Array.isArray(apiData)) {
+            supportersData = apiData.filter(s => s && s.id !== 'sup_initial_01' && s.name !== 'Marcus Vance');
             loaded = true;
             updateSyncUIStatus('Dedicated Admin Server Connected', true);
           }
@@ -910,8 +961,8 @@
         const staticRes = await fetch('config/supporters.json?t=' + Date.now());
         if (staticRes.ok) {
           const staticData = await staticRes.json();
-          if (Array.isArray(staticData) && staticData.length > 0) {
-            supportersData = staticData;
+          if (Array.isArray(staticData)) {
+            supportersData = staticData.filter(s => s && s.id !== 'sup_initial_01' && s.name !== 'Marcus Vance');
             loaded = true;
             updateSyncUIStatus('Static Cloud Config Loaded', true);
           }
@@ -925,8 +976,9 @@
         const local = localStorage.getItem('pixkit_leaderboard_supporters_v2');
         if (local) {
           const parsed = JSON.parse(local);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            supportersData = parsed;
+          if (Array.isArray(parsed)) {
+            supportersData = parsed.filter(s => s && s.id !== 'sup_initial_01' && s.name !== 'Marcus Vance');
+            localStorage.setItem('pixkit_leaderboard_supporters_v2', JSON.stringify(supportersData));
             loaded = true;
             updateSyncUIStatus('Local Storage Loaded', true);
           }
@@ -934,17 +986,18 @@
       } catch (_) {}
     }
 
-    // 5. Final fallback: Seed if still empty
-    if (!loaded || !Array.isArray(supportersData) || supportersData.length === 0) {
-      seedInitialSupporters();
-    } else {
-      lastSyncTimestamp = Date.now();
-      renderSupportersTable();
+    // 5. Final fallback: If still empty, keep as empty array (0 mockups)
+    if (!loaded || !Array.isArray(supportersData)) {
+      supportersData = [];
     }
+
+    lastSyncTimestamp = Date.now();
+    renderSupportersTable();
   }
 
   async function saveSupportersData() {
     try {
+      supportersData = supportersData.filter(s => s && s.id !== 'sup_initial_01' && s.name !== 'Marcus Vance');
       localStorage.setItem('pixkit_leaderboard_supporters_v2', JSON.stringify(supportersData));
 
       // 1. Save to Firebase RTDB in real time
@@ -963,6 +1016,34 @@
     lastSyncTimestamp = Date.now();
     renderSupportersTable();
   }
+
+  window.clearAllSupportersMockups = async function () {
+    if (!confirm('Clear all mockup and test supporter records? Total collection will be reset to $0.00.')) {
+      return;
+    }
+    supportersData = [];
+    try {
+      localStorage.removeItem('pixkit_leaderboard_supporters_v2');
+      localStorage.setItem('pixkit_leaderboard_supporters_v2', JSON.stringify([]));
+    } catch (_) {}
+
+    if (supportersRef) {
+      try {
+        await supportersRef.set([]);
+      } catch (_) {}
+    }
+
+    try {
+      await fetch(SUPPORTERS_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([])
+      });
+    } catch (_) {}
+
+    renderSupportersTable();
+    showToast('Mockup data completely cleared! Collection reset to $0.00.', 'success');
+  };
 
   window.refreshSupportersData = async function (isAuto = false) {
     const btn = document.getElementById('btnManualRefreshSupporters');
@@ -1020,23 +1101,20 @@
 
   function renderSupportersTable() {
     const tbody = document.getElementById('supportersTableBody');
-    const searchVal = (document.getElementById('supporterSearchInput')?.value || '').toLowerCase();
     if (!tbody) return;
 
     if (!Array.isArray(supportersData)) supportersData = [];
+    supportersData = supportersData.filter(s => s && s.id !== 'sup_initial_01' && s.name !== 'Marcus Vance');
 
-    let filtered = supportersData.filter(s => {
-      const name = (s.name || '').toLowerCase();
-      const note = (s.note || '').toLowerCase();
-      return name.includes(searchVal) || note.includes(searchVal);
-    });
+    // 1. Timeframe filter
+    const timeframeSupporters = supportersData.filter(s => isWithinTimeframe(s.timestamp, currentSupportersTimeframe));
 
-    // Normalized currency conversion to USD
+    // 2. Metrics calculation based on selected timeframe
     let totalUSD = 0;
     const uniqueBackers = new Set();
     let visibleBackersCount = 0;
 
-    supportersData.forEach(s => {
+    timeframeSupporters.forEach(s => {
       const amt = Number(s.amount) || 0;
       let usdVal = amt;
       if (s.currency === 'INR') usdVal = amt / 85;
@@ -1059,11 +1137,53 @@
 
     if (totalEl) totalEl.textContent = '$' + totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (countEl) countEl.textContent = uniqueBackers.size;
-    if (breakdownEl) breakdownEl.textContent = `From ${supportersData.length} total contribution${supportersData.length === 1 ? '' : 's'}`;
-    if (backersSubtext) backersSubtext.textContent = `${uniqueBackers.size} unique donor${uniqueBackers.size === 1 ? '' : 's'} (${visibleBackersCount} visible)`;
+
+    const tfLabels = {
+      weekly: 'Past 7 days',
+      monthly: 'Past 30 days',
+      all: 'All-time (Yearly)'
+    };
+    const tfLabel = tfLabels[currentSupportersTimeframe] || 'All-time';
+
+    if (breakdownEl) {
+      breakdownEl.textContent = `${tfLabel} • ${timeframeSupporters.length} contribution${timeframeSupporters.length === 1 ? '' : 's'}`;
+    }
+    if (backersSubtext) {
+      backersSubtext.textContent = `${uniqueBackers.size} unique donor${uniqueBackers.size === 1 ? '' : 's'} (${visibleBackersCount} visible)`;
+    }
+
+    updateLeaderboardMetricStatus();
+
+    // 3. Search query filter
+    const searchVal = (document.getElementById('supporterSearchInput')?.value || '').toLowerCase().trim();
+    let filtered = timeframeSupporters.filter(s => {
+      if (!searchVal) return true;
+      const name = (s.name || '').toLowerCase();
+      const note = (s.note || '').toLowerCase();
+      return name.includes(searchVal) || note.includes(searchVal);
+    });
+
+    // 4. Sort by amount descending (highest sponsor first)
+    filtered.sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0));
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--admin-muted); padding: 36px;">No supporter records found.</td></tr>`;
+      if (supportersData.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--admin-muted); padding: 44px 20px;">
+              <div style="font-size: 26px; margin-bottom: 8px;">🌱</div>
+              <strong style="color: var(--admin-ink); font-size: 14.5px;">No supporters recorded yet</strong>
+              <p style="margin: 6px 0 0; font-size: 12.5px;">Real donor contributions will appear here live as they arrive.</p>
+            </td>
+          </tr>`;
+      } else {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--admin-muted); padding: 36px 20px;">
+              No supporter records found matching "${escapeHtml(searchVal || tfLabel)}".
+            </td>
+          </tr>`;
+      }
       return;
     }
 
@@ -1071,6 +1191,7 @@
       const isHidden = s.hidden === true;
       const currencySymbol = s.currency === 'INR' ? '₹' : (s.currency === 'EUR' ? '€' : (s.currency === 'GBP' ? '£' : '$'));
       const formattedAmt = Number(s.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const dateStr = new Date(s.timestamp || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
       return `
         <tr style="${isHidden ? 'opacity: 0.45;' : ''}">
@@ -1085,7 +1206,7 @@
             </span>
           </td>
           <td><span class="platform-status-tag status-live">${escapeHtml(s.badge || 'Supporter')}</span></td>
-          <td>${new Date(s.timestamp || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+          <td>${dateStr}</td>
           <td>
             <button class="table-btn" onclick="toggleHideSupporter('${s.id}')">
               ${isHidden ? 'Unhide' : 'Hide'}
@@ -1118,35 +1239,39 @@
 
   window.addManualSupporter = function () {
     const name = prompt('Supporter Name:');
-    if (!name) return;
-    const amount = parseFloat(prompt('Contribution Amount (USD):', '25')) || 25;
+    if (!name || !name.trim()) return;
+    const amountStr = prompt('Contribution Amount (USD):', '25');
+    if (amountStr === null) return;
+    const amount = parseFloat(amountStr) || 25;
     const note = prompt('Optional Message / Note:') || '';
 
     const newSup = {
       id: 'sup_manual_' + Date.now(),
-      name: name,
+      name: name.trim(),
       amount: amount,
       currency: 'USD',
       badge: amount >= 50 ? 'Patron' : (amount >= 15 ? 'Backer' : 'Supporter'),
-      note: note,
+      note: note.trim(),
       timestamp: Date.now(),
-      platform: 'manual',
+      platform: 'web',
+      verified: true,
       hidden: false
     };
 
     supportersData.unshift(newSup);
     saveSupportersData();
-    showToast('Manual supporter added to board!', 'success');
+    showToast(`Added manual sponsor ${newSup.name} ($${newSup.amount})!`, 'success');
   };
 
   window.exportSupportersCSV = function () {
-    if (supportersData.length === 0) {
+    if (!supportersData || supportersData.length === 0) {
       alert('No supporter records to export.');
       return;
     }
-    let csv = 'ID,Name,Amount,Currency,Badge,Date,Note\n';
+    let csv = 'ID,Name,Amount,Currency,Badge,Date,Note,Hidden\n';
     supportersData.forEach(s => {
-      csv += `"${s.id}","${(s.name||'').replace(/"/g, '""')}",${s.amount},"${s.currency}","${s.badge}","${new Date(s.timestamp).toISOString()}","${(s.note||'').replace(/"/g, '""')}"\n`;
+      const d = s.timestamp ? new Date(s.timestamp).toISOString() : '';
+      csv += `"${s.id}","${(s.name||'').replace(/"/g, '""')}",${s.amount},"${s.currency||'USD'}","${s.badge||'Supporter'}","${d}","${(s.note||'').replace(/"/g, '""')}",${s.hidden ? 'true' : 'false'}\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -1155,6 +1280,7 @@
     a.href = url;
     a.download = `pixkit_supporters_${Date.now()}.csv`;
     a.click();
+    showToast('Supporters CSV exported!', 'success');
   };
 
   window.filterSupportersTable = function () {
