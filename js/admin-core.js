@@ -1354,15 +1354,15 @@
     }
   }
 
-  let currentSupportersTimeframe = 'all'; // 'all' (Yearly / All-Time) | 'monthly' | 'weekly'
+  let currentSupportersTimeframe = 'all'; // 'all' (All-Time) | 'yearly' | 'monthly' | 'weekly'
   window.currentSupportersTimeframe = currentSupportersTimeframe;
 
   window.setSupportersTimeframe = function (tf) {
     currentSupportersTimeframe = tf;
     window.currentSupportersTimeframe = tf;
 
-    ['all', 'monthly', 'weekly'].forEach(k => {
-      const btnId = `btn-tf-${k === 'all' ? 'all' : (k === 'monthly' ? 'month' : 'week')}`;
+    ['all', 'yearly', 'monthly', 'weekly'].forEach(k => {
+      const btnId = `btn-tf-${k === 'all' ? 'all' : (k === 'yearly' ? 'year' : (k === 'monthly' ? 'month' : 'week'))}`;
       const btn = document.getElementById(btnId);
       if (btn) btn.classList.toggle('active', k === tf);
     });
@@ -1375,13 +1375,30 @@
     const ts = typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
     if (isNaN(ts) || ts <= 0) return true;
 
-    const now = Date.now();
+    const now = new Date();
+
     if (timeframe === 'weekly') {
-      return (now - ts) <= (7 * 24 * 60 * 60 * 1000);
+      // Current Calendar Week (Monday 00:00:00 to now, refreshes every Monday)
+      const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const day = startOfWeek.getDay();
+      const diffToMonday = (day === 0 ? -6 : 1) - day;
+      startOfWeek.setDate(startOfWeek.getDate() + diffToMonday);
+      startOfWeek.setHours(0, 0, 0, 0);
+      return ts >= startOfWeek.getTime();
     }
+
     if (timeframe === 'monthly') {
-      return (now - ts) <= (30 * 24 * 60 * 60 * 1000);
+      // Current Calendar Month (1st of this month 00:00:00 to now, refreshes on 1st of each month)
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      return ts >= startOfMonth.getTime();
     }
+
+    if (timeframe === 'yearly') {
+      // Current Calendar Year (Jan 1 of this year 00:00:00 to now, refreshes on Jan 1)
+      const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+      return ts >= startOfYear.getTime();
+    }
+
     return true;
   }
 
@@ -1631,10 +1648,13 @@
     if (totalEl) totalEl.textContent = '$' + totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (countEl) countEl.textContent = uniqueBackers.size;
 
+    const now = new Date();
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const tfLabels = {
-      weekly: 'Past 7 days',
-      monthly: 'Past 30 days',
-      all: 'All-time (Yearly)'
+      weekly: 'This week (Refreshes Mondays)',
+      monthly: `This month (${monthNames[now.getMonth()]}) • Refreshes 1st`,
+      yearly: `This year (${now.getFullYear()}) • Refreshes Jan 1`,
+      all: 'All-time cumulative'
     };
     const tfLabel = tfLabels[currentSupportersTimeframe] || 'All-time';
 

@@ -345,13 +345,16 @@
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
             <div style="display: flex; gap: 8px; align-items: center;">
               <span style="font-size: 11.5px; font-weight: 800; color: var(--admin-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">Filter Timeframe:</span>
-              <button type="button" class="timeframe-pill-btn active" id="btn-tf-all" onclick="setSupportersTimeframe('all')">
-                <span>All Time (Yearly)</span>
+              <button type="button" class="timeframe-pill-btn active" id="btn-tf-all" onclick="setSupportersTimeframe('all')" title="All-Time permanent total">
+                <span>All-Time</span>
               </button>
-              <button type="button" class="timeframe-pill-btn" id="btn-tf-month" onclick="setSupportersTimeframe('monthly')">
+              <button type="button" class="timeframe-pill-btn" id="btn-tf-year" onclick="setSupportersTimeframe('yearly')" title="Current year contributions (resets Jan 1)">
+                <span>This Year</span>
+              </button>
+              <button type="button" class="timeframe-pill-btn" id="btn-tf-month" onclick="setSupportersTimeframe('monthly')" title="Current month contributions (resets 1st of each month)">
                 <span>This Month</span>
               </button>
-              <button type="button" class="timeframe-pill-btn" id="btn-tf-week" onclick="setSupportersTimeframe('weekly')">
+              <button type="button" class="timeframe-pill-btn" id="btn-tf-week" onclick="setSupportersTimeframe('weekly')" title="Current week contributions (resets every Monday)">
                 <span>This Week</span>
               </button>
             </div>
