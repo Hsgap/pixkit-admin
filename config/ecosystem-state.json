@@ -92,7 +92,7 @@
     "id": "announcement_001",
     "type": "announcement",
     "headline": "PixKit 1.0.3 is Now Available",
-    "message": "Update now on Google Play for new 3D button depth, vector icons, and smoother performance.",
+    "message": "Update now on Google Play for fluid dock sliding animation, smooth tool categories, and custom save folders.",
     "dismissible": true,
     "actionUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",
     "actionLabel": "Update via Google Play"
@@ -106,7 +106,7 @@
       "updatePrompt": true,
       "updateTitle": "PixKit 1.0.3 is Now Available",
       "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",
-      "notes": "Enhanced 3D button depth & shadows\nHardware-rendered vector SVG icons in Privacy & Settings\nCompletely suppressed web blue selection highlights\nSmooth native page transitions"
+      "notes": "Fluid floating dock sliding active indicator\nRock-solid top app bar with icon micro-animations\nSmooth category accordion expand & collapse\nCustom save destination folder selection"
     },
     "desktop": {
       "minSupportedVersion": "1.0.0",
@@ -119,22 +119,22 @@
   "versionRegistry": {
     "mobile": [
       {
-        "versionName": "1.0.2",
-        "versionCode": 3,
+        "versionName": "1.0.3",
+        "versionCode": 4,
         "releaseDate": "2026-11-13",
         "status": "latest",
         "disabled": false,
         "disabledMessage": "This version is no longer supported. Please update on Google Play.",
         "updatePrompt": {
-          "enabled": true,
+          "enabled": false,
           "type": "optional",
           "allowSkip": true,
-          "title": "PixKit 1.0.3 is Now Available",
+          "title": "PixKit Studio is Up to Date",
           "notes": [
-            "Enhanced 3D button depth & shadows",
-            "Hardware-rendered vector SVG icons in Privacy & Settings",
-            "Completely suppressed web blue selection highlights",
-            "Smooth native page transitions"
+            "Fluid floating dock sliding active indicator",
+            "Rock-solid top app bar with icon micro-animations",
+            "Smooth category accordion expand & collapse",
+            "Custom save destination folder selection"
           ],
           "targetVersion": "1.0.3",
           "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio"
@@ -146,22 +146,22 @@
         "featureOverrides": {}
       },
       {
-        "versionName": "1.0.1",
-        "versionCode": 2,
-        "releaseDate": "2026-11-10",
+        "versionName": "1.0.2",
+        "versionCode": 3,
+        "releaseDate": "2026-11-13",
         "status": "active",
         "disabled": false,
-        "disabledMessage": "This version is no longer supported. Please update on Google Play.",
+        "disabledMessage": "This version (1.0.2) is no longer supported. Please update on Google Play.",
         "updatePrompt": {
           "enabled": true,
           "type": "optional",
           "allowSkip": true,
           "title": "PixKit 1.0.3 is Now Available",
           "notes": [
-            "Enhanced 3D button depth & shadows",
-            "Hardware-rendered vector SVG icons in Privacy & Settings",
-            "Completely suppressed web blue selection highlights",
-            "Smooth native page transitions"
+            "Fluid floating dock sliding active indicator",
+            "Rock-solid top app bar with icon micro-animations",
+            "Smooth category accordion expand & collapse",
+            "Custom save destination folder selection"
           ],
           "targetVersion": "1.0.3",
           "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio"
@@ -186,7 +186,7 @@
           "notes": [
             "Initial Play Store release"
           ],
-          "targetVersion": "1.0.2",
+          "targetVersion": "1.0.3",
           "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio"
         },
         "customMessage": {

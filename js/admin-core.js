@@ -1233,8 +1233,8 @@
     if (!Array.isArray(ecosystemState.versionRegistry.mobile)) {
       ecosystemState.versionRegistry.mobile = [
         {
-          versionName: '1.0.2',
-          versionCode: 3,
+          versionName: '1.0.3',
+          versionCode: 4,
           releaseDate: '2026-11-13',
           status: 'latest',
           disabled: false,
@@ -1242,14 +1242,39 @@
           updatePrompt: {
             enabled: false,
             type: 'optional',
-            title: 'PixKit 1.0.2 is Now Live',
+            allowSkip: true,
+            title: 'PixKit Studio is Up to Date',
             notes: [
-              'Enhanced 3D button depth & shadows',
-              'Smooth seamless page entrance & exit animations',
-              'Hardware-rendered vector SVG icons in Privacy & Settings',
-              'Zero web blue tap highlights'
+              'Fluid floating dock sliding active indicator',
+              'Rock-solid top app bar with icon micro-animations',
+              'Smooth category accordion expand & collapse',
+              'Custom save destination folder selection'
             ],
-            targetVersion: '1.0.2',
+            targetVersion: '1.0.3',
+            updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
+          },
+          customMessage: { enabled: false, text: '' },
+          featureOverrides: {}
+        },
+        {
+          versionName: '1.0.2',
+          versionCode: 3,
+          releaseDate: '2026-11-13',
+          status: 'active',
+          disabled: false,
+          disabledMessage: 'This version (1.0.2) is no longer supported. Please update on Google Play.',
+          updatePrompt: {
+            enabled: true,
+            type: 'optional',
+            allowSkip: true,
+            title: 'PixKit 1.0.3 is Now Available',
+            notes: [
+              'Fluid floating dock sliding active indicator',
+              'Rock-solid top app bar with icon micro-animations',
+              'Smooth category accordion expand & collapse',
+              'Custom save destination folder selection'
+            ],
+            targetVersion: '1.0.3',
             updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
           },
           customMessage: { enabled: false, text: '' },
@@ -1267,7 +1292,7 @@
             type: 'optional',
             title: 'Initial Release (Offline Legacy)',
             notes: ['Initial Play Store release'],
-            targetVersion: '1.0.2',
+            targetVersion: '1.0.3',
             updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
           },
           customMessage: { enabled: false, text: '' },
