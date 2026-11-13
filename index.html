@@ -830,19 +830,35 @@
             </label>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
-            <div class="modal-field-group">
-              <label for="manageVersionUpdateType">Update Prompt Type</label>
-              <select id="manageVersionUpdateType" class="admin-field-input" style="cursor: pointer;">
-                <option value="optional">Optional (Soft with "Later" button)</option>
-                <option value="force">Force / Mandatory (No "Later" button)</option>
-              </select>
-            </div>
+          <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px;">
             <div class="modal-field-group">
               <label for="manageVersionTargetVer">Target Version to Upgrade To</label>
-              <input type="text" id="manageVersionTargetVer" class="admin-field-input" placeholder="e.g. 1.0.2">
+              <input type="text" id="manageVersionTargetVer" class="admin-field-input" placeholder="e.g. 1.0.3">
             </div>
           </div>
+
+          <!-- Allow User to Skip Toggle (Remind Me Later Option) -->
+          <div style="background: var(--admin-stage); border: 1px solid var(--admin-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <b style="color: var(--admin-ink); font-size: 13px;">Allow User to Skip ("Remind Me Later" Button)</b>
+                <span id="allowSkipBadge" style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: rgba(215,243,106,0.15); color: var(--admin-lime); border: 1px solid rgba(215,243,106,0.3);">SKIPPABLE</span>
+              </div>
+              <small style="color: var(--admin-muted); font-size: 11.5px; display: block; margin-top: 2px;">
+                When checked, users get a "Remind Me Later" button. When unchecked, users are forced to update before using the app.
+              </small>
+            </div>
+            <label class="switch-box mini-switch" style="flex-shrink: 0;">
+              <input type="checkbox" id="manageVersionAllowSkip" checked onchange="handleAllowSkipToggle(this.checked)">
+              <span class="slider-round"></span>
+            </label>
+          </div>
+
+          <!-- Hidden compatibility selector -->
+          <select id="manageVersionUpdateType" style="display: none;">
+            <option value="optional">optional</option>
+            <option value="force">force</option>
+          </select>
 
           <div class="modal-field-group" style="margin-bottom: 12px;">
             <label for="manageVersionUpdateTitle">Pop-up Headline</label>
@@ -906,7 +922,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script src="js/admin-core.js?v=2.5"></script>
+  <script src="js/admin-core.js?v=2.6"></script>
   <script>
     function saveNewPin() {
       const pin = document.getElementById('newPinInput').value;

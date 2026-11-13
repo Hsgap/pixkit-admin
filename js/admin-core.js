@@ -1490,6 +1490,14 @@
     if (promptNotes) promptNotes.value = Array.isArray(updatePrompt.notes) ? updatePrompt.notes.join('\n') : (updatePrompt.notes || '');
     if (promptUrl) promptUrl.value = updatePrompt.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
 
+    // Allow Skip Toggle
+    const allowSkipToggle = document.getElementById('manageVersionAllowSkip');
+    const isAllowSkip = updatePrompt.allowSkip !== false && updatePrompt.type !== 'force';
+    if (allowSkipToggle) {
+      allowSkipToggle.checked = isAllowSkip;
+      window.handleAllowSkipToggle(isAllowSkip);
+    }
+
     // 3. Render All 24 Tools Categorized Overrides
     const overrides = item.featureOverrides || {};
     const container = document.getElementById('manageVersionToolsCategoriesContainer');
@@ -1553,6 +1561,25 @@
     if (wrap) wrap.style.display = checked ? 'block' : 'none';
   };
 
+  window.handleAllowSkipToggle = function (isChecked) {
+    const badge = document.getElementById('allowSkipBadge');
+    const typeSelect = document.getElementById('manageVersionUpdateType');
+    if (typeSelect) typeSelect.value = isChecked ? 'optional' : 'force';
+    if (badge) {
+      if (isChecked) {
+        badge.textContent = 'SKIPPABLE ("LATER" BUTTON)';
+        badge.style.background = 'rgba(215,243,106,0.15)';
+        badge.style.color = 'var(--admin-lime)';
+        badge.style.borderColor = 'rgba(215,243,106,0.3)';
+      } else {
+        badge.textContent = 'MANDATORY (NO SKIP)';
+        badge.style.background = 'rgba(239,68,68,0.15)';
+        badge.style.color = '#ef4444';
+        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+      }
+    }
+  };
+
   window.handleSaveManageVersion = function (event) {
     if (event) event.preventDefault();
     const versionName = document.getElementById('manageVersionOriginalName')?.value;
@@ -1567,10 +1594,12 @@
     // 2. Update Prompt
     const notesStr = document.getElementById('manageVersionUpdateNotes')?.value?.trim() || '';
     const notesArray = notesStr.split('\n').map(s => s.trim().replace(/^[-•*]\s*/, '')).filter(Boolean);
+    const allowSkip = !!document.getElementById('manageVersionAllowSkip')?.checked;
 
     item.updatePrompt = {
       enabled: !!document.getElementById('manageVersionUpdatePromptEnabled')?.checked,
-      type: document.getElementById('manageVersionUpdateType')?.value || 'optional',
+      type: allowSkip ? 'optional' : 'force',
+      allowSkip: allowSkip,
       targetVersion: document.getElementById('manageVersionTargetVer')?.value?.trim() || '',
       title: document.getElementById('manageVersionUpdateTitle')?.value?.trim() || '',
       notes: notesArray,
@@ -1611,11 +1640,11 @@
       if (ecosystemState.versionControl && ecosystemState.versionControl.mobile) {
         ecosystemState.versionControl.mobile.latestVersion = item.updatePrompt.targetVersion || '1.0.3';
         ecosystemState.versionControl.mobile.updatePrompt = item.updatePrompt.enabled;
+        ecosystemState.versionControl.mobile.allowSkip = allowSkip;
         ecosystemState.versionControl.mobile.updateTitle = item.updatePrompt.title || 'PixKit Update Available';
         ecosystemState.versionControl.mobile.updateUrl = item.updatePrompt.updateUrl;
         ecosystemState.versionControl.mobile.notes = Array.isArray(item.updatePrompt.notes) ? item.updatePrompt.notes.join('\n') : (item.updatePrompt.notes || '');
 
-        // CRITICAL: Ensure installed phone APK (which checks if isBelowMin && forceUpdate) triggers immediately!
         if (item.updatePrompt.enabled) {
           ecosystemState.versionControl.mobile.forceUpdate = true;
           ecosystemState.versionControl.mobile.minSupportedVersion = item.updatePrompt.targetVersion || '1.0.3';
@@ -1629,7 +1658,7 @@
           ecosystemState.broadcast.actionLabel = 'Update via Google Play';
           ecosystemState.broadcast.actionUrl = item.updatePrompt.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
           ecosystemState.broadcast.targetPlatform = 'all';
-          ecosystemState.broadcast.dismissible = (item.updatePrompt.type !== 'force');
+          ecosystemState.broadcast.dismissible = allowSkip;
         } else {
           ecosystemState.versionControl.mobile.forceUpdate = false;
           ecosystemState.versionControl.mobile.minSupportedVersion = '1.0.0';

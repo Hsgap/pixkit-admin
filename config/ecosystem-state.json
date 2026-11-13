@@ -102,6 +102,7 @@
       "minSupportedVersion": "1.0.3",
       "latestVersion": "1.0.3",
       "forceUpdate": true,
+      "allowSkip": true,
       "updatePrompt": true,
       "updateTitle": "PixKit 1.0.3 is Now Available",
       "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",
@@ -127,6 +128,7 @@
         "updatePrompt": {
           "enabled": true,
           "type": "optional",
+          "allowSkip": true,
           "title": "PixKit 1.0.3 is Now Available",
           "notes": [
             "Enhanced 3D button depth & shadows",
@@ -153,6 +155,7 @@
         "updatePrompt": {
           "enabled": true,
           "type": "optional",
+          "allowSkip": true,
           "title": "PixKit 1.0.3 is Now Available",
           "notes": [
             "Enhanced 3D button depth & shadows",
