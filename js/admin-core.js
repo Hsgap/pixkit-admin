@@ -1432,21 +1432,15 @@
     showToast(`✓ Official Release v${versionName} (Build ${versionCode}) successfully registered!`, 'success');
   };
 
-  const ALL_TOOL_KEYS = [
-    { key: 'crop', label: 'Crop Tool' },
-    { key: 'resize', label: 'Resize' },
-    { key: 'compress', label: 'Compress' },
-    { key: 'adjust', label: 'Adjust' },
-    { key: 'filters', label: 'Filters' },
-    { key: 'rotateFlip', label: 'Rotate / Flip' },
-    { key: 'drawShapes', label: 'Draw Shapes' },
-    { key: 'addText', label: 'Add Text' },
-    { key: 'formatConverter', label: 'Convert Hub' },
-    { key: 'mergePdf', label: 'Merge PDF' },
-    { key: 'splitPdf', label: 'Split PDF' },
-    { key: 'compressPdf', label: 'Compress PDF' },
-    { key: 'pdfToImages', label: 'PDF to Images' }
-  ];
+  window.toggleVersionCategoryTools = function (categoryKey, isEnabled) {
+    const checks = document.querySelectorAll(`.version-tool-override-check[data-cat="${categoryKey}"]`);
+    checks.forEach(cb => { cb.checked = isEnabled; });
+  };
+
+  window.toggleAllVersionOverrides = function (isEnabled) {
+    const checks = document.querySelectorAll('.version-tool-override-check');
+    checks.forEach(cb => { cb.checked = isEnabled; });
+  };
 
   window.openManageVersionModal = function (versionName) {
     const list = getVersionRegistryList();
@@ -1478,22 +1472,50 @@
 
     if (promptToggle) promptToggle.checked = !!updatePrompt.enabled;
     if (promptType) promptType.value = updatePrompt.type || 'optional';
-    if (promptTarget) promptTarget.value = updatePrompt.targetVersion || ecosystemState.versionControl?.mobile?.latestVersion || '1.0.2';
+    if (promptTarget) promptTarget.value = updatePrompt.targetVersion || ecosystemState.versionControl?.mobile?.latestVersion || '1.0.3';
     if (promptTitle) promptTitle.value = updatePrompt.title || `PixKit Update Available!`;
     if (promptNotes) promptNotes.value = Array.isArray(updatePrompt.notes) ? updatePrompt.notes.join('\n') : (updatePrompt.notes || '');
     if (promptUrl) promptUrl.value = updatePrompt.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
 
-    // 3. Tool Overrides Grid
+    // 3. Render All 24 Tools Categorized Overrides
     const overrides = item.featureOverrides || {};
-    const toolsGrid = document.getElementById('manageVersionToolsGrid');
-    if (toolsGrid) {
-      toolsGrid.innerHTML = ALL_TOOL_KEYS.map(tool => {
-        const isAllowed = overrides[tool.key] !== false; // true unless explicitly false
+    const container = document.getElementById('manageVersionToolsCategoriesContainer');
+    if (container) {
+      container.innerHTML = ALL_TOOLS_SCHEMA.map(cat => {
+        const catToolsHtml = cat.tools.map(tool => {
+          const isAllowed = overrides[tool.id] !== false; // enabled by default unless explicitly false
+          return `
+            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; color: var(--admin-ink); background: var(--admin-stage); border: 1px solid var(--admin-border); border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: border-color 0.15s ease;">
+              <input type="checkbox"
+                     class="version-tool-override-check"
+                     data-cat="${cat.categoryKey}"
+                     data-tool="${tool.id}"
+                     ${isAllowed ? 'checked' : ''}
+                     style="accent-color: var(--admin-lime); width: 15px; height: 15px; margin-top: 1px; flex-shrink: 0;">
+              <div style="flex: 1; min-width: 0;">
+                <b style="display: block; font-size: 12px; color: var(--admin-ink); line-height: 1.3;">${escapeHtml(tool.name)}</b>
+                <span style="display: block; font-size: 10.5px; color: var(--admin-muted); line-height: 1.25; margin-top: 2px;">${escapeHtml(tool.desc)}</span>
+              </div>
+            </label>
+          `;
+        }).join('');
+
         return `
-          <label style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--admin-ink); background: rgba(0,0,0,0.25); border: 1px solid var(--admin-border); border-radius: 8px; padding: 6px 10px; cursor: pointer;">
-            <input type="checkbox" class="version-tool-override-check" data-tool="${tool.key}" ${isAllowed ? 'checked' : ''} style="accent-color: var(--admin-lime); width: 14px; height: 14px;">
-            <span>${tool.label}</span>
-          </label>
+          <div class="version-tool-category-group" style="margin-bottom: 14px; background: rgba(0,0,0,0.18); border: 1px solid var(--admin-border); border-radius: 10px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-weight: 800; font-size: 12.5px; color: var(--admin-ink);">
+                ${cat.icon} ${escapeHtml(cat.title)}
+              </span>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" onclick="toggleVersionCategoryTools('${cat.categoryKey}', true)" style="background: none; border: none; font-size: 11px; font-weight: 700; color: var(--admin-lime); cursor: pointer; text-decoration: underline;">Enable</button>
+                <span style="color: var(--admin-muted); font-size: 11px;">|</span>
+                <button type="button" onclick="toggleVersionCategoryTools('${cat.categoryKey}', false)" style="background: none; border: none; font-size: 11px; font-weight: 700; color: #ef4444; cursor: pointer; text-decoration: underline;">Disable</button>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
+              ${catToolsHtml}
+            </div>
+          </div>
         `;
       }).join('');
     }

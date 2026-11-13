@@ -30,7 +30,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="css/admin.css?v=2.2">
+  <link rel="stylesheet" href="css/admin.css?v=2.3">
 </head>
 <body>
 
@@ -862,13 +862,19 @@
 
         <!-- SECTION 3: PER-VERSION FEATURE OVERRIDES -->
         <div style="background: var(--admin-surface2); border: 1px solid var(--admin-border); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-          <div style="margin-bottom: 10px;">
-            <b style="color: var(--admin-ink); font-size: 13.5px; display: block;">Per-Version Tool Overrides</b>
-            <small style="color: var(--admin-muted); font-size: 11.5px;">Turn OFF a broken tool specifically for this version without affecting newer builds.</small>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+            <div>
+              <b style="color: var(--admin-ink); font-size: 13.5px; display: block;">Per-Version Tool Overrides (All 24 Tools)</b>
+              <small style="color: var(--admin-muted); font-size: 11.5px;">Turn OFF any tool specifically for this build without affecting newer versions.</small>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" onclick="toggleAllVersionOverrides(true)" style="background: var(--admin-stage); border: 1px solid var(--admin-border); padding: 5px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; color: var(--admin-lime); cursor: pointer;">Enable All 24</button>
+              <button type="button" onclick="toggleAllVersionOverrides(false)" style="background: var(--admin-stage); border: 1px solid var(--admin-border); padding: 5px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; color: #ef4444; cursor: pointer;">Disable All 24</button>
+            </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;" id="manageVersionToolsGrid">
-            <!-- Populated dynamically: Crop, Resize, Compress, PDF, etc. -->
+          <div id="manageVersionToolsCategoriesContainer">
+            <!-- Dynamically populated across all 4 tool categories by admin-core.js -->
           </div>
         </div>
 
@@ -887,9 +893,10 @@
           <input type="text" id="manageVersionCustomMsgText" class="admin-field-input" placeholder="e.g. Notice: Large batch PDF export is improved in v1.0.2!">
         </div>
 
-        <div class="admin-modal-actions" style="margin-top: 10px;">
+        <!-- STICKY MODAL ACTIONS (ALWAYS VISIBLE) -->
+        <div class="admin-modal-actions" style="position: sticky; bottom: -24px; background: var(--admin-card); padding: 14px 0 8px; border-top: 1px solid var(--admin-border); z-index: 10; margin-top: 14px; box-shadow: 0 -8px 20px rgba(0,0,0,0.4);">
           <button type="button" class="table-btn" onclick="closeManageVersionModal()" style="padding: 10px 18px; font-size: 13px;">Cancel</button>
-          <button type="submit" class="table-btn" style="padding: 10px 24px; font-size: 13px; background: var(--admin-lime); color: var(--admin-lime-text); border-color: var(--admin-lime-border); font-weight: 800;">Save Version Controls</button>
+          <button type="submit" class="table-btn" style="padding: 10px 24px; font-size: 13px; background: var(--admin-lime); color: var(--admin-lime-text); border-color: var(--admin-lime-border); font-weight: 800; box-shadow: 0 4px 14px rgba(215,243,106,0.25);">Save &amp; Broadcast Version Controls</button>
         </div>
       </form>
     </div>
@@ -899,7 +906,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <script src="js/admin-core.js?v=2.2"></script>
+  <script src="js/admin-core.js?v=2.3"></script>
   <script>
     function saveNewPin() {
       const pin = document.getElementById('newPinInput').value;
