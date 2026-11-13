@@ -1067,103 +1067,30 @@
   }
 
   function initVersionControlUI() {
-    const policy = getActiveVersionPolicy();
-    const minInput = document.getElementById('mobileMinVersion');
-    const latestInput = document.getElementById('mobileLatestVersion');
-    const forceToggle = document.getElementById('mobileForceUpdate');
-    const urlInput = document.getElementById('mobileUpdateUrl');
-    const notesInput = document.getElementById('mobileReleaseNotes');
-
-    if (minInput && document.activeElement !== minInput) minInput.value = policy.minSupportedVersion || '1.0.0';
-    if (latestInput && document.activeElement !== latestInput) latestInput.value = policy.latestVersion || '1.2.0';
-    if (forceToggle) forceToggle.checked = !!policy.forceUpdate;
-    if (urlInput && document.activeElement !== urlInput) urlInput.value = policy.updateUrl || '';
-    if (notesInput && document.activeElement !== notesInput) notesInput.value = policy.notes || '';
-
     updateVersionPreview();
     renderVersionRegistryTable();
   }
   window.initVersionControlUI = initVersionControlUI;
 
   function updateVersionPreview() {
-    const policy = getActiveVersionPolicy();
-    const minVer = document.getElementById('mobileMinVersion')?.value || policy.minSupportedVersion || '1.0.0';
-    const latestVer = document.getElementById('mobileLatestVersion')?.value || policy.latestVersion || '1.2.0';
-    const forceUpdate = document.getElementById('mobileForceUpdate')?.checked || false;
-    const updateUrl = document.getElementById('mobileUpdateUrl')?.value || policy.updateUrl || '';
-    const notes = document.getElementById('mobileReleaseNotes')?.value || policy.notes || 'Performance improvements and bug fixes.';
+    const list = getVersionRegistryList();
+    const latestItem = list.find(v => v.status === 'latest') || list[0] || {};
+    const latestVer = latestItem.versionName || '1.0.2';
+    const totalCount = list.length;
 
-    // 1. Hero pills & status indicator
-    const heroMin = document.getElementById('heroMinPill');
     const heroLatest = document.getElementById('heroLatestPill');
+    const heroTotal = document.getElementById('heroTotalReleasesPill');
     const statusIndicator = document.getElementById('versionStatusIndicator');
     const statusSubtext = document.getElementById('versionStatusSubtext');
 
-    if (heroMin) heroMin.textContent = `Min: v${minVer}`;
     if (heroLatest) heroLatest.textContent = `Latest: v${latestVer}`;
+    if (heroTotal) heroTotal.textContent = `${totalCount} Official Releases`;
 
     if (statusIndicator) {
-      if (forceUpdate) {
-        statusIndicator.innerHTML = '<span style="color: #EF4444; font-weight:800;">🚨 Hard Force Update Active</span>';
-      } else {
-        statusIndicator.innerHTML = '<span style="color: var(--admin-emerald); font-weight:800;">● Active &amp; Protecting Fleet</span>';
-      }
+      statusIndicator.innerHTML = '<span style="color: var(--admin-emerald); font-weight:800;">● Live &amp; Protecting Fleet</span>';
     }
-
     if (statusSubtext) {
-      statusSubtext.textContent = forceUpdate
-        ? `Mandatory lockout: Any client running below v${minVer} will be blocked from accessing the studio.`
-        : `Soft enforcement: Users on v${minVer} or higher can use the studio; older builds will be prompted.`;
-    }
-
-    // 2. Modal preview elements
-    const previewPill = document.getElementById('previewPill');
-    const previewTitle = document.getElementById('previewModalTitle');
-    const previewSubtitle = document.getElementById('previewModalSubtitle');
-    const previewCurrentVer = document.getElementById('previewCurrentVer');
-    const previewTargetVer = document.getElementById('previewTargetVer');
-    const previewChangelogText = document.getElementById('previewChangelogText');
-    const previewBtnPrimary = document.getElementById('previewBtnPrimary');
-    const previewBtnSecondary = document.getElementById('previewBtnSecondary');
-    const previewModeTag = document.getElementById('previewModeTag');
-    const previewAppIcon = document.getElementById('previewAppIcon');
-
-    if (previewAppIcon) {
-      previewAppIcon.textContent = currentVersionPlatform === 'mobile' ? '📱' : '💻';
-    }
-
-    if (previewCurrentVer) previewCurrentVer.textContent = `v${minVer}`;
-    if (previewTargetVer) previewTargetVer.textContent = `v${latestVer}`;
-    if (previewChangelogText) previewChangelogText.textContent = notes;
-
-    if (forceUpdate) {
-      if (previewPill) {
-        previewPill.className = 'version-tag-pill pill-force';
-        previewPill.textContent = '🔴 Mandatory Update Required';
-      }
-      if (previewTitle) previewTitle.textContent = 'Critical Update Required';
-      if (previewSubtitle) previewSubtitle.textContent = `Your installed version (v${minVer}) is no longer supported. Please update to v${latestVer} to continue.`;
-      if (previewBtnSecondary) previewBtnSecondary.style.display = 'none';
-      if (previewModeTag) previewModeTag.textContent = 'Mandatory Lockout View';
-    } else {
-      if (previewPill) {
-        previewPill.className = 'version-tag-pill pill-recommended';
-        previewPill.textContent = '🔵 Recommended Upgrade';
-      }
-      if (previewTitle) previewTitle.textContent = 'New Version Available';
-      if (previewSubtitle) previewSubtitle.textContent = `A newer build (v${latestVer}) of PixKit is ready. Update now for the latest features and bug fixes.`;
-      if (previewBtnSecondary) previewBtnSecondary.style.display = 'block';
-      if (previewModeTag) previewModeTag.textContent = 'Soft / Dismissible View';
-    }
-
-    if (previewBtnPrimary) {
-      previewBtnPrimary.textContent = currentVersionPlatform === 'mobile' ? 'Update via Google Play ➔' : 'Download Latest Update ➔';
-      previewBtnPrimary.href = updateUrl || 'javascript:void(0)';
-      if (updateUrl && updateUrl.startsWith('http')) {
-        previewBtnPrimary.target = '_blank';
-      } else {
-        previewBtnPrimary.removeAttribute('target');
-      }
+      statusSubtext.textContent = `Connected mobile clients are checked in real-time on launch. All versions managed below.`;
     }
   }
   window.updateVersionPreview = updateVersionPreview;

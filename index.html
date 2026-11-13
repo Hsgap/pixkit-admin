@@ -545,21 +545,12 @@
           <div class="flags-category-box" style="margin-bottom: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 14px;">
               <div>
-                <h3 style="margin: 0 0 4px 0;" id="versionStatusHeader">Fleet Enforcement Policy: <span style="color: var(--admin-emerald);" id="versionStatusIndicator">● Active &amp; Protecting Fleet</span></h3>
-                <p style="font-size: 12.5px; color: var(--admin-muted); margin: 0;" id="versionStatusSubtext">Connected clients are checked in real-time on launch.</p>
+                <h3 style="margin: 0 0 4px 0;" id="versionStatusHeader">Fleet Status: <span style="color: var(--admin-emerald);" id="versionStatusIndicator">● Live &amp; Protecting Fleet</span></h3>
+                <p style="font-size: 12.5px; color: var(--admin-muted); margin: 0;" id="versionStatusSubtext">Connected mobile clients are checked in real-time on launch.</p>
               </div>
-              <div style="display:flex; align-items:center; gap: 18px; flex-wrap: wrap;">
-                <div style="display: flex; gap: 10px;">
-                  <span class="version-tag-pill pill-clean" id="heroMinPill">Min: v1.0.0</span>
-                  <span class="version-tag-pill pill-recommended" id="heroLatestPill">Latest: v1.2.0</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="font-size: 12px; font-weight: 700; color: var(--admin-ink);">Force Update Gate:</span>
-                  <label class="switch-box mini-switch">
-                    <input type="checkbox" id="mobileForceUpdate" onchange="toggleVersionForceUpdate(this.checked)">
-                    <span class="slider-round"></span>
-                  </label>
-                </div>
+              <div style="display:flex; align-items:center; gap: 12px; flex-wrap: wrap;">
+                <span class="version-tag-pill pill-recommended" id="heroLatestPill" style="font-size: 12px; padding: 4px 12px;">Latest: v1.0.2</span>
+                <span class="version-tag-pill pill-clean" id="heroTotalReleasesPill" style="font-size: 12px; padding: 4px 12px;">3 Official Releases</span>
               </div>
             </div>
           </div>
@@ -600,124 +591,6 @@
                   <!-- Dynamically populated by admin-core.js -->
                 </tbody>
               </table>
-            </div>
-          </div>
-
-          <!-- Interactive Live Mobile In-App Update Preview -->
-          <div class="version-preview-card">
-            <div class="version-preview-header">
-              <span class="version-preview-title">Live In-App Dialog Preview (Exact Mobile Screen)</span>
-              <span style="font-size: 11px; color: var(--admin-muted); font-weight: 700;" id="previewModeTag">Mandatory Lockout View</span>
-            </div>
-
-            <div class="version-modal-mock" id="versionPreviewModal">
-              <div class="version-app-badge" id="previewAppBadge">
-                <span id="previewAppIcon">📱</span>
-              </div>
-              <div id="previewBadgeWrap">
-                <span class="version-tag-pill pill-force" id="previewPill">🔴 Mandatory Update Required</span>
-              </div>
-              <h3 style="font-size: 17px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;" id="previewModalTitle">Update to Continue</h3>
-              <p style="font-size: 12.5px; color: #9FA197; margin: 0 0 12px; line-height: 1.4;" id="previewModalSubtitle">
-                Your current version of PixKit is outdated. Please update to the latest build to continue using the studio.
-              </p>
-
-              <div class="version-diff-row">
-                <span>Installed: <strong style="color: #EF4444;" id="previewCurrentVer">v1.0.0</strong></span>
-                <span>&rarr;</span>
-                <span>Available: <strong style="color: var(--admin-lime);" id="previewTargetVer">v1.2.0</strong></span>
-              </div>
-
-              <div class="version-changelog-box" id="previewChangelog">
-                <div style="font-weight: 800; margin-bottom: 4px; color: var(--admin-lime); font-size: 11px; text-transform: uppercase;">What's New in this Build:</div>
-                <div id="previewChangelogText">Performance improvements and new dark mode support.</div>
-              </div>
-
-              <a href="javascript:void(0)" class="version-action-btn btn-primary" id="previewBtnPrimary">
-                Update via Google Play &rarr;
-              </a>
-              <button type="button" class="version-action-btn btn-secondary" id="previewBtnSecondary" style="display: none;">
-                Remind Me Later
-              </button>
-            </div>
-          </div>
-
-          <!-- Quick Presets Strip -->
-          <div style="margin-bottom: 20px;">
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <span style="font-size: 11.5px; font-weight: 800; color: var(--admin-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">Version Presets:</span>
-              <button type="button" class="version-preset-btn" onclick="applyVersionPreset('baseline')">
-                <span>🛡️ Safe Baseline (v1.0.0)</span>
-              </button>
-              <button type="button" class="version-preset-btn" onclick="applyVersionPreset('soft_upgrade')">
-                <span>🚀 Recommended Upgrade (v1.2.0)</span>
-              </button>
-              <button type="button" class="version-preset-btn" onclick="applyVersionPreset('hard_force')">
-                <span>🚨 Emergency Force Update (v1.2.0)</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Version Configuration Card -->
-          <div class="flags-category-box" style="margin-bottom: 20px;">
-            <h3 style="margin-bottom: 18px;">Configure Target Release &amp; Enforcement Rules</h3>
-
-            <div style="display:flex; flex-direction:column; gap:18px;">
-              <!-- Row 1: Target Platform & Minimum Version & Latest Version -->
-              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
-                <div>
-                  <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Target Platform</label>
-                  <select id="versionPlatformSelect" class="table-search-input" style="width: 100%; cursor: pointer;" onchange="switchVersionPlatform(this.value)">
-                    <option value="mobile" selected>📱 Mobile App (Android / Google Play)</option>
-                    <option value="desktop">💻 Desktop &amp; Web Standalone Client</option>
-                  </select>
-                </div>
-                <div>
-                  <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Minimum Required Version</label>
-                  <input type="text" id="mobileMinVersion" class="table-search-input" style="width: 100%;" placeholder="1.0.0" oninput="updateVersionPreviewAndState()">
-                </div>
-                <div>
-                  <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Latest Available Version</label>
-                  <input type="text" id="mobileLatestVersion" class="table-search-input" style="width: 100%;" placeholder="1.2.0" oninput="updateVersionPreviewAndState()">
-                </div>
-              </div>
-
-              <!-- Row 2: Store / Download URL -->
-              <div>
-                <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Store / Direct Download URL</label>
-                <input type="text" id="mobileUpdateUrl" class="table-search-input" style="width: 100%;" placeholder="https://play.google.com/store/apps/details?id=com.pixkit.studio" oninput="updateVersionPreviewAndState()">
-              </div>
-
-              <!-- Row 3: Release Notes -->
-              <div>
-                <label style="font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--admin-muted); display: block; margin-bottom: 6px;">Release Notes / Changelog (Shown in modal)</label>
-                <textarea id="mobileReleaseNotes" class="table-search-input" style="width: 100%; height: 70px; resize: vertical; line-height: 1.5;" placeholder="Key improvements, bug fixes, or security notices..." oninput="updateVersionPreviewAndState()"></textarea>
-              </div>
-
-              <!-- Actions Strip: Save & Publish -->
-              <div style="display:flex; justify-content:flex-end; gap:12px; margin-top: 8px;">
-                <button type="button" class="table-btn danger" onclick="applyVersionPreset('baseline')" title="Reset to safe default">Reset Baseline</button>
-                <button type="button" class="table-btn" onclick="saveAndPublishVersionPolicy()" style="background: var(--admin-lime); color: var(--admin-lime-text); border-color: var(--admin-lime-border); font-weight: 800; padding: 10px 24px; font-size: 13.5px;" id="btnSaveVersionPolicy">
-                  🚀 Save &amp; Publish Version Policy
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Interactive Client Simulator Box -->
-          <div class="flags-category-box">
-            <h3 style="margin-bottom: 8px;">🧪 Version Policy Simulator</h3>
-            <p style="font-size: 12.5px; color: var(--admin-muted); margin: 0 0 16px;">Test how any user's app build will respond against your currently active policy.</p>
-
-            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-              <input type="text" id="simTestVersion" class="table-search-input" style="width: 180px;" placeholder="e.g. 0.9.8 or 1.0.0" value="0.9.8">
-              <button type="button" class="table-btn" onclick="runVersionSimulation()" style="padding: 9px 18px; font-weight: 800;">
-                Simulate Client Launch
-              </button>
-            </div>
-
-            <div id="simResultBox" class="version-sim-result" style="display: none;">
-              <!-- Populated by JS -->
             </div>
           </div>
         </section>
