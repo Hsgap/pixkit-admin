@@ -1256,42 +1256,17 @@
           featureOverrides: {}
         },
         {
-          versionName: '1.0.1',
-          versionCode: 2,
-          releaseDate: '2026-11-10',
-          status: 'active',
-          disabled: false,
-          disabledMessage: 'Version 1.0.1 is no longer supported. Please update to continue.',
-          updatePrompt: {
-            enabled: true,
-            type: 'optional',
-            title: 'PixKit 1.0.2 Update Available',
-            notes: [
-              'Added 3D button depth and tactile press feel',
-              'Optimized legal & privacy policy page',
-              'Eliminated blue tap boxes and long-press highlights'
-            ],
-            targetVersion: '1.0.2',
-            updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
-          },
-          customMessage: { enabled: false, text: '' },
-          featureOverrides: {}
-        },
-        {
           versionName: '1.0.0',
           versionCode: 1,
           releaseDate: '2026-11-01',
-          status: 'deprecated',
+          status: 'legacy',
           disabled: false,
-          disabledMessage: 'Version 1.0.0 has been retired. Please update to the latest build to continue.',
+          disabledMessage: 'Version 1.0.0 is an offline legacy release without remote connectivity.',
           updatePrompt: {
-            enabled: true,
+            enabled: false,
             type: 'optional',
-            title: 'New PixKit Update Available',
-            notes: [
-              'New PDF tools suite & format converter',
-              'Enhanced performance and stability'
-            ],
+            title: 'Initial Release (Offline Legacy)',
+            notes: ['Initial Play Store release'],
             targetVersion: '1.0.2',
             updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
           },
@@ -1324,6 +1299,8 @@
         statusPill = `<span class="version-tag-pill pill-recommended" style="font-size: 11px; padding: 3px 8px;">🟢 Latest Release</span>`;
       } else if (item.status === 'active') {
         statusPill = `<span class="version-tag-pill pill-clean" style="font-size: 11px; padding: 3px 8px;">🟡 Active</span>`;
+      } else if (item.status === 'legacy') {
+        statusPill = `<span class="version-tag-pill" style="font-size: 11px; padding: 3px 8px; background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);">📦 Legacy (Offline)</span>`;
       } else {
         statusPill = `<span class="version-tag-pill" style="font-size: 11px; padding: 3px 8px; background: rgba(255,255,255,0.06); color: var(--admin-muted);">⚪ Deprecated</span>`;
       }
