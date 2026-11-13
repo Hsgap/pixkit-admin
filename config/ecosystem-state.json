@@ -88,20 +88,20 @@
     }
   },
   "broadcast": {
-    "enabled": false,
+    "enabled": true,
     "id": "announcement_001",
-    "type": "info",
-    "headline": "Welcome to PixKit Studio v2",
-    "message": "Brand new client-side PDF and HEIC converter tools are now live in browser!",
+    "type": "announcement",
+    "headline": "PixKit 1.0.3 is Now Available",
+    "message": "Update now on Google Play for new 3D button depth, vector icons, and smoother performance.",
     "dismissible": true,
-    "actionUrl": "",
-    "actionLabel": ""
+    "actionUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",
+    "actionLabel": "Update via Google Play"
   },
   "versionControl": {
     "mobile": {
-      "minSupportedVersion": "1.0.0",
+      "minSupportedVersion": "1.0.3",
       "latestVersion": "1.0.3",
-      "forceUpdate": false,
+      "forceUpdate": true,
       "updatePrompt": true,
       "updateTitle": "PixKit 1.0.3 is Now Available",
       "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",

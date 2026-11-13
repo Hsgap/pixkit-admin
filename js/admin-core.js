@@ -1614,7 +1614,42 @@
         ecosystemState.versionControl.mobile.updateTitle = item.updatePrompt.title || 'PixKit Update Available';
         ecosystemState.versionControl.mobile.updateUrl = item.updatePrompt.updateUrl;
         ecosystemState.versionControl.mobile.notes = Array.isArray(item.updatePrompt.notes) ? item.updatePrompt.notes.join('\n') : (item.updatePrompt.notes || '');
+
+        // CRITICAL: Ensure installed phone APK (which checks if isBelowMin && forceUpdate) triggers immediately!
+        if (item.updatePrompt.enabled) {
+          ecosystemState.versionControl.mobile.forceUpdate = true;
+          ecosystemState.versionControl.mobile.minSupportedVersion = item.updatePrompt.targetVersion || '1.0.3';
+
+          // Broadcast Announcement Banner (visible across all pages in installed mobile app)
+          if (!ecosystemState.broadcast) ecosystemState.broadcast = {};
+          ecosystemState.broadcast.enabled = true;
+          ecosystemState.broadcast.type = 'announcement';
+          ecosystemState.broadcast.headline = item.updatePrompt.title || 'PixKit 1.0.3 is Now Available';
+          ecosystemState.broadcast.message = 'A newer build of PixKit is ready. Update now on Google Play for new features and bug fixes.';
+          ecosystemState.broadcast.actionLabel = 'Update via Google Play';
+          ecosystemState.broadcast.actionUrl = item.updatePrompt.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
+          ecosystemState.broadcast.targetPlatform = 'all';
+          ecosystemState.broadcast.dismissible = (item.updatePrompt.type !== 'force');
+        } else {
+          ecosystemState.versionControl.mobile.forceUpdate = false;
+          ecosystemState.versionControl.mobile.minSupportedVersion = '1.0.0';
+          if (ecosystemState.broadcast) ecosystemState.broadcast.enabled = false;
+        }
       }
+
+      // Sync tool overrides into featureFlags.mobile so the phone's installed APK respects tool toggles immediately
+      if (!ecosystemState.featureFlags) ecosystemState.featureFlags = {};
+      if (!ecosystemState.featureFlags.mobile) ecosystemState.featureFlags.mobile = {};
+      ALL_TOOLS_SCHEMA.forEach(cat => {
+        if (!ecosystemState.featureFlags.mobile[cat.categoryKey]) ecosystemState.featureFlags.mobile[cat.categoryKey] = {};
+        cat.tools.forEach(tool => {
+          if (item.featureOverrides && item.featureOverrides[tool.id] === false) {
+            ecosystemState.featureFlags.mobile[cat.categoryKey][tool.id] = false;
+          } else {
+            ecosystemState.featureFlags.mobile[cat.categoryKey][tool.id] = true;
+          }
+        });
+      });
     }
 
     saveEcosystemState();
