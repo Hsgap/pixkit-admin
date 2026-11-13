@@ -99,9 +99,9 @@
   },
   "versionControl": {
     "mobile": {
-      "minSupportedVersion": "1.0.3",
+      "minSupportedVersion": "1.0.0",
       "latestVersion": "1.0.3",
-      "forceUpdate": true,
+      "forceUpdate": false,
       "allowSkip": true,
       "updatePrompt": true,
       "updateTitle": "PixKit 1.0.3 is Now Available",

@@ -1646,8 +1646,10 @@
         ecosystemState.versionControl.mobile.notes = Array.isArray(item.updatePrompt.notes) ? item.updatePrompt.notes.join('\n') : (item.updatePrompt.notes || '');
 
         if (item.updatePrompt.enabled) {
-          ecosystemState.versionControl.mobile.forceUpdate = true;
-          ecosystemState.versionControl.mobile.minSupportedVersion = item.updatePrompt.targetVersion || '1.0.3';
+          // If allowSkip is true (checked), update is optional & skippable (forceUpdate = false).
+          // If allowSkip is false (unchecked), update is mandatory (forceUpdate = true, no skip).
+          ecosystemState.versionControl.mobile.forceUpdate = !allowSkip;
+          ecosystemState.versionControl.mobile.minSupportedVersion = allowSkip ? '1.0.0' : (item.updatePrompt.targetVersion || '1.0.3');
 
           // Broadcast Announcement Banner (visible across all pages in installed mobile app)
           if (!ecosystemState.broadcast) ecosystemState.broadcast = {};
