@@ -106,7 +106,7 @@
       "updatePrompt": true,
       "updateTitle": "PixKit 1.0.3 is Now Available",
       "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",
-      "notes": "Fluid floating dock sliding active indicator\nRock-solid top app bar with icon micro-animations\nSmooth category accordion expand & collapse\nCustom save destination folder selection"
+      "notes": "Significantly increased compression accuracy\nFluid animations across the entire UI\nRefined component depth and subtle shadows\nRedesigned dock with smooth sliding indicator\nNew dedicated in-app Privacy Policy page"
     },
     "desktop": {
       "minSupportedVersion": "1.0.0",
@@ -131,10 +131,11 @@
           "allowSkip": true,
           "title": "PixKit Studio is Up to Date",
           "notes": [
-            "Fluid floating dock sliding active indicator",
-            "Rock-solid top app bar with icon micro-animations",
-            "Smooth category accordion expand & collapse",
-            "Custom save destination folder selection"
+            "Significantly increased image compression accuracy",
+            "Fluid animations and transitions across the entire UI",
+            "Refined visual depth and subtle component shadows",
+            "Redesigned floating dock with smooth sliding indicator",
+            "New dedicated in-app Privacy Policy page"
           ],
           "targetVersion": "1.0.3",
           "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio"
@@ -158,10 +159,11 @@
           "allowSkip": true,
           "title": "PixKit 1.0.3 is Now Available",
           "notes": [
-            "Fluid floating dock sliding active indicator",
-            "Rock-solid top app bar with icon micro-animations",
-            "Smooth category accordion expand & collapse",
-            "Custom save destination folder selection"
+            "Significantly increased image compression accuracy",
+            "Fluid animations and transitions across the entire UI",
+            "Refined visual depth and subtle component shadows",
+            "Redesigned floating dock with smooth sliding indicator",
+            "New dedicated in-app Privacy Policy page"
           ],
           "targetVersion": "1.0.3",
           "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio"
