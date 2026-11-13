@@ -1693,7 +1693,10 @@
         }
       }
 
-      // Sync tool overrides into featureFlags.mobile so the phone's installed APK respects tool toggles immediately
+    }
+
+    // Sync tool overrides into featureFlags.mobile for active/latest versions so connected phones respect toggles immediately
+    if (item.status === 'latest' || item.versionName === '1.0.3' || item.versionName === '1.0.2') {
       if (!ecosystemState.featureFlags) ecosystemState.featureFlags = {};
       if (!ecosystemState.featureFlags.mobile) ecosystemState.featureFlags.mobile = {};
       ALL_TOOLS_SCHEMA.forEach(cat => {
@@ -1701,7 +1704,7 @@
         cat.tools.forEach(tool => {
           if (item.featureOverrides && item.featureOverrides[tool.id] === false) {
             ecosystemState.featureFlags.mobile[cat.categoryKey][tool.id] = false;
-          } else {
+          } else if (item.featureOverrides && item.featureOverrides[tool.id] === true) {
             ecosystemState.featureFlags.mobile[cat.categoryKey][tool.id] = true;
           }
         });
