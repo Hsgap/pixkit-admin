@@ -1081,6 +1081,7 @@
     if (notesInput && document.activeElement !== notesInput) notesInput.value = policy.notes || '';
 
     updateVersionPreview();
+    renderVersionRegistryTable();
   }
   window.initVersionControlUI = initVersionControlUI;
 
@@ -1293,6 +1294,382 @@
           <span style="font-size: 12px; color: #A7F3D0;">User on v${testVer} is completely up to date. App launches cleanly without any interruptions.</span>
         </div>
       `;
+    }
+  };
+
+  // =========================================================================
+  // 5.1 Official Releases Registry & Dedicated Per-Version Controls
+  // =========================================================================
+
+  function getVersionRegistryList() {
+    if (!ecosystemState.versionRegistry) ecosystemState.versionRegistry = {};
+    if (!Array.isArray(ecosystemState.versionRegistry.mobile)) {
+      ecosystemState.versionRegistry.mobile = [
+        {
+          versionName: '1.0.2',
+          versionCode: 3,
+          releaseDate: '2026-11-13',
+          status: 'latest',
+          disabled: false,
+          disabledMessage: 'This version is no longer supported. Please update on Google Play.',
+          updatePrompt: {
+            enabled: false,
+            type: 'optional',
+            title: 'PixKit 1.0.2 is Now Live',
+            notes: [
+              'Enhanced 3D button depth & shadows',
+              'Smooth seamless page entrance & exit animations',
+              'Hardware-rendered vector SVG icons in Privacy & Settings',
+              'Zero web blue tap highlights'
+            ],
+            targetVersion: '1.0.2',
+            updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
+          },
+          customMessage: { enabled: false, text: '' },
+          featureOverrides: {}
+        },
+        {
+          versionName: '1.0.1',
+          versionCode: 2,
+          releaseDate: '2026-11-10',
+          status: 'active',
+          disabled: false,
+          disabledMessage: 'Version 1.0.1 is no longer supported. Please update to continue.',
+          updatePrompt: {
+            enabled: true,
+            type: 'optional',
+            title: 'PixKit 1.0.2 Update Available',
+            notes: [
+              'Added 3D button depth and tactile press feel',
+              'Optimized legal & privacy policy page',
+              'Eliminated blue tap boxes and long-press highlights'
+            ],
+            targetVersion: '1.0.2',
+            updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
+          },
+          customMessage: { enabled: false, text: '' },
+          featureOverrides: {}
+        },
+        {
+          versionName: '1.0.0',
+          versionCode: 1,
+          releaseDate: '2026-11-01',
+          status: 'deprecated',
+          disabled: false,
+          disabledMessage: 'Version 1.0.0 has been retired. Please update to the latest build to continue.',
+          updatePrompt: {
+            enabled: true,
+            type: 'optional',
+            title: 'New PixKit Update Available',
+            notes: [
+              'New PDF tools suite & format converter',
+              'Enhanced performance and stability'
+            ],
+            targetVersion: '1.0.2',
+            updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
+          },
+          customMessage: { enabled: false, text: '' },
+          featureOverrides: {}
+        }
+      ];
+    }
+    return ecosystemState.versionRegistry.mobile;
+  }
+
+  function renderVersionRegistryTable() {
+    const list = getVersionRegistryList();
+    const tbody = document.getElementById('versionRegistryTableBody');
+    if (!tbody) return;
+
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--admin-muted); padding: 24px;">No official releases registered yet. Click "+ Register New Official Release" to add one.</td></tr>`;
+      return;
+    }
+
+    // Sort by versionCode descending (latest on top)
+    list.sort((a, b) => (b.versionCode || 0) - (a.versionCode || 0));
+
+    tbody.innerHTML = list.map(item => {
+      let statusPill = '';
+      if (item.disabled) {
+        statusPill = `<span class="version-tag-pill pill-force" style="font-size: 11px; padding: 3px 8px;">🔴 Disabled (Killed)</span>`;
+      } else if (item.status === 'latest') {
+        statusPill = `<span class="version-tag-pill pill-recommended" style="font-size: 11px; padding: 3px 8px;">🟢 Latest Release</span>`;
+      } else if (item.status === 'active') {
+        statusPill = `<span class="version-tag-pill pill-clean" style="font-size: 11px; padding: 3px 8px;">🟡 Active</span>`;
+      } else {
+        statusPill = `<span class="version-tag-pill" style="font-size: 11px; padding: 3px 8px; background: rgba(255,255,255,0.06); color: var(--admin-muted);">⚪ Deprecated</span>`;
+      }
+
+      const updatePrompt = item.updatePrompt || {};
+      const updateBadge = updatePrompt.enabled
+        ? `<span style="color: var(--admin-lime); font-size: 12px; font-weight: 700;">🔔 Active (${updatePrompt.type === 'force' ? 'Mandatory' : 'Soft'})</span>`
+        : `<span style="color: var(--admin-muted); font-size: 12px;">🔕 Off</span>`;
+
+      const killBadge = item.disabled
+        ? `<span style="color: #ef4444; font-weight: 800; font-size: 12px;">🚨 Locked</span>`
+        : `<span style="color: var(--admin-emerald); font-weight: 700; font-size: 12px;">✓ Allowed</span>`;
+
+      return `
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <strong style="color: var(--admin-ink); font-size: 14px;">v${escapeHtml(item.versionName)}</strong>
+              ${item.status === 'latest' ? '<span style="font-size: 9.5px; background: rgba(215,243,106,0.15); color: var(--admin-lime); border: 1px solid rgba(215,243,106,0.3); border-radius: 999px; padding: 1px 6px; font-weight: 800;">LATEST</span>' : ''}
+            </div>
+          </td>
+          <td><span style="font-family: monospace; color: var(--admin-muted); font-size: 12px;">Build ${item.versionCode || 1}</span></td>
+          <td style="color: var(--admin-muted); font-size: 12.5px;">${escapeHtml(item.releaseDate || 'N/A')}</td>
+          <td>${statusPill}</td>
+          <td>${updateBadge}</td>
+          <td>${killBadge}</td>
+          <td style="text-align: right;">
+            <div style="display: flex; gap: 6px; justify-content: flex-end;">
+              <button type="button" class="table-btn" onclick="openManageVersionModal('${escapeHtml(item.versionName)}')" style="font-size: 12px; padding: 5px 12px; font-weight: 700;" title="Configure kill-switch, update prompt, and feature flags">
+                ⚙️ Manage
+              </button>
+              ${item.status !== 'latest' ? `
+                <button type="button" class="table-btn danger" onclick="deleteVersionRelease('${escapeHtml(item.versionName)}')" style="font-size: 12px; padding: 5px 8px;" title="Delete this version entry">
+                  🗑
+                </button>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+  window.renderVersionRegistryTable = renderVersionRegistryTable;
+
+  window.openNewReleaseModal = function () {
+    const modal = document.getElementById('modalNewRelease');
+    if (!modal) return;
+    const dateInput = document.getElementById('newReleaseDate');
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+    // Compute next suggested version
+    const list = getVersionRegistryList();
+    const highestBuild = list.reduce((max, cur) => Math.max(max, cur.versionCode || 0), 0);
+    const codeInput = document.getElementById('newReleaseVersionCode');
+    if (codeInput) codeInput.value = highestBuild + 1;
+
+    modal.style.display = 'flex';
+  };
+
+  window.closeNewReleaseModal = function () {
+    const modal = document.getElementById('modalNewRelease');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.handleSaveNewRelease = function (event) {
+    if (event) event.preventDefault();
+    const versionName = document.getElementById('newReleaseVersionName')?.value?.trim();
+    const versionCode = parseInt(document.getElementById('newReleaseVersionCode')?.value || '1', 10);
+    const releaseDate = document.getElementById('newReleaseDate')?.value || new Date().toISOString().split('T')[0];
+    const notesText = document.getElementById('newReleaseNotes')?.value?.trim() || '';
+    const storeUrl = document.getElementById('newReleaseStoreUrl')?.value?.trim() || 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
+    const setLatest = document.getElementById('newReleaseSetLatest')?.checked;
+
+    if (!versionName) {
+      showToast('Version name is required.', 'warning');
+      return;
+    }
+
+    const list = getVersionRegistryList();
+
+    // Check if duplicate
+    const existingIndex = list.findIndex(v => v.versionName === versionName);
+    if (existingIndex >= 0) {
+      showToast(`Version ${versionName} already exists. Click "Manage" on its row to edit it.`, 'warning');
+      return;
+    }
+
+    // Split notes by newline
+    const notesArray = notesText.split('\n').map(s => s.trim().replace(/^[-•*]\s*/, '')).filter(Boolean);
+
+    if (setLatest) {
+      // Demote current latest to active
+      list.forEach(v => {
+        if (v.status === 'latest') v.status = 'active';
+      });
+      // Also update general version policy
+      if (ecosystemState.versionControl && ecosystemState.versionControl.mobile) {
+        ecosystemState.versionControl.mobile.latestVersion = versionName;
+        ecosystemState.versionControl.mobile.updateUrl = storeUrl;
+        ecosystemState.versionControl.mobile.notes = notesText;
+      }
+    }
+
+    const newRelease = {
+      versionName: versionName,
+      versionCode: versionCode,
+      releaseDate: releaseDate,
+      status: setLatest ? 'latest' : 'active',
+      disabled: false,
+      disabledMessage: `This version (${versionName}) is no longer supported. Please update on Google Play.`,
+      updatePrompt: {
+        enabled: false,
+        type: 'optional',
+        title: `PixKit ${versionName} is Available!`,
+        notes: notesArray,
+        targetVersion: versionName,
+        updateUrl: storeUrl
+      },
+      customMessage: { enabled: false, text: '' },
+      featureOverrides: {}
+    };
+
+    list.unshift(newRelease);
+
+    saveEcosystemState();
+    renderVersionRegistryTable();
+    initVersionControlUI();
+    closeNewReleaseModal();
+    showToast(`✓ Official Release v${versionName} (Build ${versionCode}) successfully registered!`, 'success');
+  };
+
+  const ALL_TOOL_KEYS = [
+    { key: 'crop', label: 'Crop Tool' },
+    { key: 'resize', label: 'Resize' },
+    { key: 'compress', label: 'Compress' },
+    { key: 'adjust', label: 'Adjust' },
+    { key: 'filters', label: 'Filters' },
+    { key: 'rotateFlip', label: 'Rotate / Flip' },
+    { key: 'drawShapes', label: 'Draw Shapes' },
+    { key: 'addText', label: 'Add Text' },
+    { key: 'formatConverter', label: 'Convert Hub' },
+    { key: 'mergePdf', label: 'Merge PDF' },
+    { key: 'splitPdf', label: 'Split PDF' },
+    { key: 'compressPdf', label: 'Compress PDF' },
+    { key: 'pdfToImages', label: 'PDF to Images' }
+  ];
+
+  window.openManageVersionModal = function (versionName) {
+    const list = getVersionRegistryList();
+    const item = list.find(v => v.versionName === versionName);
+    if (!item) return;
+
+    const modal = document.getElementById('modalManageVersion');
+    if (!modal) return;
+
+    document.getElementById('manageVersionModalHeading').textContent = `Managing Release: v${item.versionName} (Build ${item.versionCode || 1})`;
+    document.getElementById('manageVersionOriginalName').value = item.versionName;
+
+    // 1. Kill-Switch
+    const disabledToggle = document.getElementById('manageVersionDisabled');
+    const disabledMsgWrap = document.getElementById('manageVersionDisabledMsgWrap');
+    const disabledMsg = document.getElementById('manageVersionDisabledMsg');
+    if (disabledToggle) disabledToggle.checked = !!item.disabled;
+    if (disabledMsgWrap) disabledMsgWrap.style.display = item.disabled ? 'block' : 'none';
+    if (disabledMsg) disabledMsg.value = item.disabledMessage || `Version ${item.versionName} has been retired. Please update to continue creating.`;
+
+    // 2. Update Pop-up
+    const updatePrompt = item.updatePrompt || {};
+    const promptToggle = document.getElementById('manageVersionUpdatePromptEnabled');
+    const promptType = document.getElementById('manageVersionUpdateType');
+    const promptTarget = document.getElementById('manageVersionTargetVer');
+    const promptTitle = document.getElementById('manageVersionUpdateTitle');
+    const promptNotes = document.getElementById('manageVersionUpdateNotes');
+    const promptUrl = document.getElementById('manageVersionUpdateUrl');
+
+    if (promptToggle) promptToggle.checked = !!updatePrompt.enabled;
+    if (promptType) promptType.value = updatePrompt.type || 'optional';
+    if (promptTarget) promptTarget.value = updatePrompt.targetVersion || ecosystemState.versionControl?.mobile?.latestVersion || '1.0.2';
+    if (promptTitle) promptTitle.value = updatePrompt.title || `PixKit Update Available!`;
+    if (promptNotes) promptNotes.value = Array.isArray(updatePrompt.notes) ? updatePrompt.notes.join('\n') : (updatePrompt.notes || '');
+    if (promptUrl) promptUrl.value = updatePrompt.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
+
+    // 3. Tool Overrides Grid
+    const overrides = item.featureOverrides || {};
+    const toolsGrid = document.getElementById('manageVersionToolsGrid');
+    if (toolsGrid) {
+      toolsGrid.innerHTML = ALL_TOOL_KEYS.map(tool => {
+        const isAllowed = overrides[tool.key] !== false; // true unless explicitly false
+        return `
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--admin-ink); background: rgba(0,0,0,0.25); border: 1px solid var(--admin-border); border-radius: 8px; padding: 6px 10px; cursor: pointer;">
+            <input type="checkbox" class="version-tool-override-check" data-tool="${tool.key}" ${isAllowed ? 'checked' : ''} style="accent-color: var(--admin-lime); width: 14px; height: 14px;">
+            <span>${tool.label}</span>
+          </label>
+        `;
+      }).join('');
+    }
+
+    // 4. Custom Message
+    const customMsg = item.customMessage || {};
+    const customToggle = document.getElementById('manageVersionCustomMsgEnabled');
+    const customText = document.getElementById('manageVersionCustomMsgText');
+    if (customToggle) customToggle.checked = !!customMsg.enabled;
+    if (customText) customText.value = customMsg.text || '';
+
+    modal.style.display = 'flex';
+  };
+
+  window.closeManageVersionModal = function () {
+    const modal = document.getElementById('modalManageVersion');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.toggleManageVersionKillSwitch = function (checked) {
+    const wrap = document.getElementById('manageVersionDisabledMsgWrap');
+    if (wrap) wrap.style.display = checked ? 'block' : 'none';
+  };
+
+  window.handleSaveManageVersion = function (event) {
+    if (event) event.preventDefault();
+    const versionName = document.getElementById('manageVersionOriginalName')?.value;
+    const list = getVersionRegistryList();
+    const item = list.find(v => v.versionName === versionName);
+    if (!item) return;
+
+    // 1. Kill-Switch
+    item.disabled = !!document.getElementById('manageVersionDisabled')?.checked;
+    item.disabledMessage = document.getElementById('manageVersionDisabledMsg')?.value?.trim() || '';
+
+    // 2. Update Prompt
+    const notesStr = document.getElementById('manageVersionUpdateNotes')?.value?.trim() || '';
+    const notesArray = notesStr.split('\n').map(s => s.trim().replace(/^[-•*]\s*/, '')).filter(Boolean);
+
+    item.updatePrompt = {
+      enabled: !!document.getElementById('manageVersionUpdatePromptEnabled')?.checked,
+      type: document.getElementById('manageVersionUpdateType')?.value || 'optional',
+      targetVersion: document.getElementById('manageVersionTargetVer')?.value?.trim() || '',
+      title: document.getElementById('manageVersionUpdateTitle')?.value?.trim() || '',
+      notes: notesArray,
+      updateUrl: document.getElementById('manageVersionUpdateUrl')?.value?.trim() || ''
+    };
+
+    // 3. Tool Overrides
+    const newOverrides = {};
+    const checkboxes = document.querySelectorAll('.version-tool-override-check');
+    checkboxes.forEach(cb => {
+      const toolKey = cb.getAttribute('data-tool');
+      if (toolKey) {
+        newOverrides[toolKey] = cb.checked;
+      }
+    });
+    item.featureOverrides = newOverrides;
+
+    // 4. Custom Banner
+    item.customMessage = {
+      enabled: !!document.getElementById('manageVersionCustomMsgEnabled')?.checked,
+      text: document.getElementById('manageVersionCustomMsgText')?.value?.trim() || ''
+    };
+
+    saveEcosystemState();
+    renderVersionRegistryTable();
+    closeManageVersionModal();
+    showToast(`✓ Controls saved for Release v${versionName}!`, 'success');
+  };
+
+  window.deleteVersionRelease = function (versionName) {
+    if (!confirm(`Are you sure you want to remove Release v${versionName} from the registry?`)) return;
+    const list = getVersionRegistryList();
+    const index = list.findIndex(v => v.versionName === versionName);
+    if (index >= 0) {
+      list.splice(index, 1);
+      saveEcosystemState();
+      renderVersionRegistryTable();
+      showToast(`Release v${versionName} removed.`, 'info');
     }
   };
 
