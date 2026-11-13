@@ -1291,7 +1291,20 @@
     // Sort by versionCode descending (latest on top)
     list.sort((a, b) => (b.versionCode || 0) - (a.versionCode || 0));
 
-    tbody.innerHTML = list.map(item => {
+    // Filter out internal backwards-compat alias builds (e.g. 1.0.1) so only official Play Store releases show in UI
+    const visibleList = list.filter(item => item.versionName !== '1.0.1');
+
+    const heroReleasesPill = document.getElementById('heroTotalReleasesPill');
+    if (heroReleasesPill) {
+      heroReleasesPill.textContent = `${visibleList.length} Official Releases`;
+    }
+
+    if (!visibleList.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--admin-muted); padding: 24px;">No official releases registered yet. Click "+ Register New Official Release" to add one.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = visibleList.map(item => {
       let statusPill = '';
       if (item.disabled) {
         statusPill = `<span class="version-tag-pill pill-force" style="font-size: 11px; padding: 3px 8px;">🔴 Disabled (Killed)</span>`;
@@ -1580,6 +1593,29 @@
       enabled: !!document.getElementById('manageVersionCustomMsgEnabled')?.checked,
       text: document.getElementById('manageVersionCustomMsgText')?.value?.trim() || ''
     };
+
+    // Seamless legacy mirror: if managing 1.0.2, sync exact rules to legacy 1.0.1 (the APK currently on users' phones)
+    if (item.versionName === '1.0.2') {
+      let v101 = list.find(v => v.versionName === '1.0.1');
+      if (!v101) {
+        v101 = { versionName: '1.0.1', versionCode: 2, releaseDate: '2026-11-10', status: 'active' };
+        list.push(v101);
+      }
+      v101.disabled = item.disabled;
+      v101.disabledMessage = item.disabledMessage;
+      v101.updatePrompt = JSON.parse(JSON.stringify(item.updatePrompt));
+      v101.featureOverrides = JSON.parse(JSON.stringify(item.featureOverrides));
+      v101.customMessage = JSON.parse(JSON.stringify(item.customMessage));
+
+      // Also sync general fallback policy so both per-version checks and fleetwide fallback pass
+      if (ecosystemState.versionControl && ecosystemState.versionControl.mobile) {
+        ecosystemState.versionControl.mobile.latestVersion = item.updatePrompt.targetVersion || '1.0.3';
+        ecosystemState.versionControl.mobile.updatePrompt = item.updatePrompt.enabled;
+        ecosystemState.versionControl.mobile.updateTitle = item.updatePrompt.title || 'PixKit Update Available';
+        ecosystemState.versionControl.mobile.updateUrl = item.updatePrompt.updateUrl;
+        ecosystemState.versionControl.mobile.notes = Array.isArray(item.updatePrompt.notes) ? item.updatePrompt.notes.join('\n') : (item.updatePrompt.notes || '');
+      }
+    }
 
     saveEcosystemState();
     renderVersionRegistryTable();

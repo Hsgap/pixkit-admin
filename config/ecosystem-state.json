@@ -100,10 +100,12 @@
   "versionControl": {
     "mobile": {
       "minSupportedVersion": "1.0.0",
-      "latestVersion": "1.0.2",
+      "latestVersion": "1.0.3",
       "forceUpdate": false,
+      "updatePrompt": true,
+      "updateTitle": "PixKit 1.0.3 is Now Available",
       "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",
-      "notes": "Minimal maintenance status modal, Studio Hub greying controls, full PDF tools suite, and zero UI collisions."
+      "notes": "Enhanced 3D button depth & shadows\nHardware-rendered vector SVG icons in Privacy & Settings\nCompletely suppressed web blue selection highlights\nSmooth native page transitions"
     },
     "desktop": {
       "minSupportedVersion": "1.0.0",
@@ -123,7 +125,33 @@
         "disabled": false,
         "disabledMessage": "This version is no longer supported. Please update on Google Play.",
         "updatePrompt": {
+          "enabled": true,
+          "type": "optional",
+          "title": "PixKit 1.0.3 is Now Available",
+          "notes": [
+            "Enhanced 3D button depth & shadows",
+            "Hardware-rendered vector SVG icons in Privacy & Settings",
+            "Completely suppressed web blue selection highlights",
+            "Smooth native page transitions"
+          ],
+          "targetVersion": "1.0.3",
+          "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio"
+        },
+        "customMessage": {
           "enabled": false,
+          "text": ""
+        },
+        "featureOverrides": {}
+      },
+      {
+        "versionName": "1.0.1",
+        "versionCode": 2,
+        "releaseDate": "2026-11-10",
+        "status": "active",
+        "disabled": false,
+        "disabledMessage": "This version is no longer supported. Please update on Google Play.",
+        "updatePrompt": {
+          "enabled": true,
           "type": "optional",
           "title": "PixKit 1.0.3 is Now Available",
           "notes": [
