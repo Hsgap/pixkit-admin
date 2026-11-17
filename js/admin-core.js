@@ -346,19 +346,36 @@
     try {
       // 1. Save locally in browser
       localStorage.setItem('pixkit_admin_state_cache', JSON.stringify(ecosystemState));
+      localStorage.setItem('pixkit_ecosystem_cache', JSON.stringify(ecosystemState));
 
-      // 2. Broadcast LIVE to Firebase Realtime Database (instantly triggers on pixkit.site & mobile app within 50ms)
+      // 2. Broadcast LIVE across tabs via BroadcastChannel
+      try {
+        const bc = new BroadcastChannel('pixkit_fleet_channel');
+        bc.postMessage({ type: 'ECOSYSTEM_UPDATE', state: ecosystemState, payload: ecosystemState });
+        bc.close();
+      } catch (_) {}
+
+      // 3. Broadcast LIVE to Firebase Realtime Database (instantly triggers on pixkit.site & mobile app within 50ms)
       const rtdb = getRTDB();
       if (rtdb) {
         await rtdb.ref('ecosystem').set(ecosystemState);
       }
 
-      // 3. Post to local server if available
+      // 4. Post to local admin server
       fetch(API_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ecosystemState)
       }).catch(() => {});
+
+      // 5. Also sync to local studio server on port 3000 if running locally
+      if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        fetch('http://localhost:3000/api/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ecosystemState)
+        }).catch(() => {});
+      }
 
       showToast('Ecosystem changes synced live to all clients!', 'success');
     } catch (err) {
@@ -370,7 +387,7 @@
   window.saveEcosystemState = saveEcosystemState;
 
   // =========================================================================
-  // Granular All-Tools Ecosystem Schema (24 Ready Tools Across 4 Categories)
+  // Granular All-Tools Ecosystem Schema (25 Ready Tools Across 4 Categories)
   // =========================================================================
   const ALL_TOOLS_SCHEMA = [
     {
@@ -379,14 +396,18 @@
       icon: '🎨',
       description: 'Standard client-side canvas manipulation, tone tuning, filters, and layer tools',
       tools: [
-        { id: 'adjust', name: 'Adjust Tones', desc: 'Brightness, Contrast, Saturation, & Vibrance controls' },
-        { id: 'filters', name: 'Preset Filters', desc: 'Mono, Warm, Cool, Vintage, Cyberpunk, Film presets' },
+        { id: 'adjust', name: 'Lighting & Tone Calibration', desc: 'Brightness, Contrast, Saturation, & Vibrance controls' },
+        { id: 'filters', name: 'Preset Styles & Filters', desc: 'Mono, Warm, Cool, Vintage, Cyberpunk, Film presets' },
         { id: 'crop', name: 'Crop & Aspect Ratio', desc: 'Freeform selection & social media preset ratios' },
         { id: 'resize', name: 'Resize & Dimensions', desc: 'Pixel width/height scaling & DPI preservation' },
         { id: 'rotateFlip', name: 'Rotate & Flip', desc: '90° step rotation, horizontal & vertical mirror' },
         { id: 'compress', name: 'Compress Image', desc: 'Client-side JPEG/PNG/WebP compression engine' },
         { id: 'drawShapes', name: 'Draw & Shapes', desc: 'Freehand brush, rectangles, circles, arrows, highlighter' },
-        { id: 'addText', name: 'Add Text & Typography', desc: 'Custom text overlays, system fonts, styling & watermarks' }
+        { id: 'addText', name: 'Add Text & Typography', desc: 'Custom text overlays, system fonts, styling & watermarks' },
+        { id: 'blur', name: 'Focus & Depth (Blur)', desc: 'Selective Gaussian blur, depth of field and radial vignette' },
+        { id: 'canvas', name: 'Canvas & Framing', desc: 'Expand canvas boundaries, solid color framing & custom padding' },
+        { id: 'watermark', name: 'Watermark Overlay', desc: 'Custom text/logo watermarking with opacity and tiled presets' },
+        { id: 'batchEdit', name: 'Batch Image Processor', desc: 'Process multiple images concurrently with saved editing presets' }
       ]
     },
     {
@@ -395,12 +416,13 @@
       icon: '🔄',
       description: 'Zero-cloud image and document format conversion routines running directly in client',
       tools: [
-        { id: 'formatConverter', name: 'Format Converter', desc: 'Batch PNG, JPG, WebP, AVIF, BMP converter' },
-        { id: 'heicToJpg', name: 'HEIC to JPG Converter', desc: 'Apple HEIC/HEIF client decoding into JPG' },
-        { id: 'svgToPng', name: 'SVG to PNG Converter', desc: 'High-res vector to raster image client rendering' },
-        { id: 'imageToPdf', name: 'Image to PDF', desc: 'Bundle one or more photos into multi-page PDF documents' },
-        { id: 'imageToIco', name: 'Image to ICO', desc: 'Multi-resolution website favicon generator' },
-        { id: 'imageToBase64', name: 'Image to Base64', desc: 'Convert image files to direct Data URI strings for web devs' }
+        { id: 'formatConverter', name: 'Target Format & Quality', desc: 'Batch PNG, JPG, WebP, AVIF, BMP converter' },
+        { id: 'heicToJpg', name: 'Apple HEIC Decoder', desc: 'Apple HEIC/HEIF client decoding into JPG' },
+        { id: 'svgToPng', name: 'SVG Vector Rasterizer', desc: 'High-res vector to raster image client rendering' },
+        { id: 'imageToPdf', name: 'Images to PDF Document', desc: 'Bundle one or more photos into multi-page PDF documents' },
+        { id: 'imageToIco', name: 'Favicon & ICO Package', desc: 'Multi-resolution website favicon generator' },
+        { id: 'imageToBase64', name: 'Base64 & Data URLs', desc: 'Convert image files to direct Data URI strings for web devs' },
+        { id: 'batchConvert', name: 'Batch Convert Processor', desc: 'Bulk format conversion and quality scaling across multiple files' }
       ]
     },
     {
@@ -409,13 +431,14 @@
       icon: '📄',
       description: 'Client-side PDF-Lib document assembly, extraction, page manipulation, and compression',
       tools: [
-        { id: 'mergePdf', name: 'Merge PDF Files', desc: 'Concatenate multiple PDF documents in custom order' },
-        { id: 'splitPdf', name: 'Split PDF Files', desc: 'Extract individual pages or range splits into separate files' },
-        { id: 'compressPdf', name: 'Compress PDF', desc: 'DPI reduction and embedded image resampling' },
-        { id: 'pdfToImages', name: 'PDF to Images', desc: 'Render PDF pages into crisp PNG/JPG image files' },
-        { id: 'imagesToPdf', name: 'Images to PDF', desc: 'Compile multiple JPG/PNG images into a formatted PDF' },
+        { id: 'convertPdf', name: 'Convert to PDF Document', desc: 'Universal document/image to PDF compiler' },
+        { id: 'pdfToImages', name: 'PDF to Images Rasterizer', desc: 'Render PDF pages into crisp PNG/JPG image files' },
+        { id: 'mergePdf', name: 'Merge PDF Documents', desc: 'Concatenate multiple PDF documents in custom order' },
+        { id: 'splitPdf', name: 'Split & Extract PDF Pages', desc: 'Extract individual pages or range splits into separate files' },
+        { id: 'compressPdf', name: 'Compress PDF', desc: 'Stream optimization, DPI reduction and embedded image resampling' },
         { id: 'rotatePdf', name: 'Rotate PDF Pages', desc: 'Permanent 90°/180° page rotation per page or document' },
-        { id: 'deletePdfPages', name: 'Delete PDF Pages', desc: 'Selectively remove pages and download cleaned document' }
+        { id: 'deletePdfPages', name: 'Delete PDF Pages', desc: 'Selectively remove pages and download cleaned document' },
+        { id: 'batchPdf', name: 'Batch PDF Processor', desc: 'Compress, rotate, extract, or convert multiple PDFs at once' }
       ]
     },
     {
@@ -1233,24 +1256,48 @@
     if (!Array.isArray(ecosystemState.versionRegistry.mobile)) {
       ecosystemState.versionRegistry.mobile = [
         {
-          versionName: '1.0.3',
-          versionCode: 4,
-          releaseDate: '2026-11-13',
+          versionName: '1.0.4',
+          versionCode: 7,
+          releaseDate: '2026-11-16',
           status: 'latest',
           disabled: false,
-          disabledMessage: 'This version is no longer supported. Please update on Google Play.',
+          disabledMessage: 'This version is no longer supported.',
           updatePrompt: {
             enabled: false,
             type: 'optional',
             allowSkip: true,
             title: 'PixKit Studio is Up to Date',
             notes: [
-              'Fluid floating dock sliding active indicator',
-              'Rock-solid top app bar with icon micro-animations',
-              'Smooth category accordion expand & collapse',
-              'Custom save destination folder selection'
+              'Pixel-Perfect Crop Zoom System with interactive magnifying loupe',
+              '1-pixel precision D-pad nudger',
+              'Stage zoom controls (1x, 1.5x, 2x, 3x)',
+              'Pinch-to-zoom support for fine framing'
             ],
-            targetVersion: '1.0.3',
+            targetVersion: '1.0.4',
+            updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
+          },
+          customMessage: { enabled: false, text: '' },
+          featureOverrides: {}
+        },
+        {
+          versionName: '1.0.3',
+          versionCode: 4,
+          releaseDate: '2026-11-13',
+          status: 'active',
+          disabled: false,
+          disabledMessage: 'This version is no longer supported. Please update on Google Play.',
+          updatePrompt: {
+            enabled: true,
+            type: 'optional',
+            allowSkip: true,
+            title: 'PixKit 1.0.4 is Now Available',
+            notes: [
+              'Precision 1px Crop with live 3x magnifying loupe',
+              'Universal Undo/Redo in top bar',
+              'Direct WhatsApp sharing and export',
+              'Haptic feedback toggle and performance optimizations'
+            ],
+            targetVersion: '1.0.4',
             updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
           },
           customMessage: { enabled: false, text: '' },
@@ -1267,14 +1314,14 @@
             enabled: true,
             type: 'optional',
             allowSkip: true,
-            title: 'PixKit 1.0.3 is Now Available',
+            title: 'PixKit 1.0.4 is Now Available',
             notes: [
-              'Fluid floating dock sliding active indicator',
-              'Rock-solid top app bar with icon micro-animations',
-              'Smooth category accordion expand & collapse',
-              'Custom save destination folder selection'
+              'Precision 1px Crop with live 3x magnifying loupe',
+              'Universal Undo/Redo in top bar',
+              'Direct WhatsApp sharing and export',
+              'Haptic feedback toggle and performance optimizations'
             ],
-            targetVersion: '1.0.3',
+            targetVersion: '1.0.4',
             updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
           },
           customMessage: { enabled: false, text: '' },
@@ -1288,11 +1335,17 @@
           disabled: false,
           disabledMessage: 'Version 1.0.0 is an offline legacy release without remote connectivity.',
           updatePrompt: {
-            enabled: false,
+            enabled: true,
             type: 'optional',
-            title: 'Initial Release (Offline Legacy)',
-            notes: ['Initial Play Store release'],
-            targetVersion: '1.0.3',
+            allowSkip: true,
+            title: 'PixKit 1.0.4 is Now Available',
+            notes: [
+              'Precision 1px Crop with live 3x magnifying loupe',
+              'Universal Undo/Redo in top bar',
+              'Direct WhatsApp sharing and export',
+              'Haptic feedback toggle and performance optimizations'
+            ],
+            targetVersion: '1.0.4',
             updateUrl: 'https://play.google.com/store/apps/details?id=com.pixkit.studio'
           },
           customMessage: { enabled: false, text: '' },
@@ -1674,13 +1727,13 @@
           // If allowSkip is true (checked), update is optional & skippable (forceUpdate = false).
           // If allowSkip is false (unchecked), update is mandatory (forceUpdate = true, no skip).
           ecosystemState.versionControl.mobile.forceUpdate = !allowSkip;
-          ecosystemState.versionControl.mobile.minSupportedVersion = allowSkip ? '1.0.0' : (item.updatePrompt.targetVersion || '1.0.3');
+          ecosystemState.versionControl.mobile.minSupportedVersion = allowSkip ? '1.0.0' : (item.updatePrompt.targetVersion || '1.0.4');
 
           // Broadcast Announcement Banner (visible across all pages in installed mobile app)
           if (!ecosystemState.broadcast) ecosystemState.broadcast = {};
           ecosystemState.broadcast.enabled = true;
           ecosystemState.broadcast.type = 'announcement';
-          ecosystemState.broadcast.headline = item.updatePrompt.title || 'PixKit 1.0.3 is Now Available';
+          ecosystemState.broadcast.headline = item.updatePrompt.title || 'PixKit 1.0.4 is Now Available';
           ecosystemState.broadcast.message = 'A newer build of PixKit is ready. Update now on Google Play for new features and bug fixes.';
           ecosystemState.broadcast.actionLabel = 'Update via Google Play';
           ecosystemState.broadcast.actionUrl = item.updatePrompt.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
@@ -1696,7 +1749,7 @@
     }
 
     // Sync tool overrides into featureFlags.mobile for active/latest versions so connected phones respect toggles immediately
-    if (item.status === 'latest' || item.versionName === '1.0.3' || item.versionName === '1.0.2') {
+    if (item.status === 'latest' || item.versionName === '1.0.4' || item.versionName === '1.0.3' || item.versionName === '1.0.2') {
       if (!ecosystemState.featureFlags) ecosystemState.featureFlags = {};
       if (!ecosystemState.featureFlags.mobile) ecosystemState.featureFlags.mobile = {};
       ALL_TOOLS_SCHEMA.forEach(cat => {
@@ -2369,6 +2422,187 @@
       '"': '&quot;'
     }[tag] || tag));
   }
+
+  // =========================================================================
+  // Admin Diagnostics Suite Integration (25 In-Memory Client Engines)
+  // =========================================================================
+
+  let adminDiagResults = [];
+  let currentAdminDiagFilter = 'all';
+
+  window.filterAdminDiag = function (filter, btn) {
+    currentAdminDiagFilter = filter;
+    if (btn && btn.parentElement) {
+      btn.parentElement.querySelectorAll('.diag-filter-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    const rows = document.querySelectorAll('.admin-diag-row');
+    rows.forEach(row => {
+      const cat = row.getAttribute('data-category');
+      const status = row.getAttribute('data-status');
+      if (filter === 'all') {
+        row.style.display = '';
+      } else if (filter === 'failed') {
+        row.style.display = status === 'fail' ? '' : 'none';
+      } else if (filter === cat) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  };
+
+  window.runAdminDiagnostics = async function () {
+    if (!window.PixKitDiagnostics) {
+      showToast('Diagnostics engine not loaded. Please refresh.', 'error');
+      return;
+    }
+
+    const runBtn = document.getElementById('admin-diag-run-btn');
+    const progressBar = document.getElementById('admin-diag-progress-fill');
+    const progressText = document.getElementById('admin-diag-progress-text');
+    const container = document.getElementById('admin-diag-results-container');
+    const metricPassed = document.getElementById('admin-diag-stat-passed');
+    const metricFailed = document.getElementById('admin-diag-stat-failed');
+    const metricDuration = document.getElementById('admin-diag-stat-duration');
+    const metricStatus = document.getElementById('admin-diag-stat-status');
+
+    if (runBtn) {
+      runBtn.disabled = true;
+      runBtn.innerHTML = `
+        <svg class="spin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <span>Running Synthetic Tests...</span>
+      `;
+    }
+
+    if (progressBar) progressBar.style.width = '0%';
+    if (progressText) progressText.textContent = 'Initializing test harness...';
+    if (metricStatus) {
+      metricStatus.textContent = 'Executing...';
+      metricStatus.style.color = 'var(--admin-amber)';
+    }
+
+    if (container) container.innerHTML = '';
+    adminDiagResults = [];
+
+    try {
+      const suiteResults = await window.PixKitDiagnostics.run(e => {
+        if (e.phase === 'running') {
+          const pct = Math.round(((e.index - 1) / e.total) * 100);
+          if (progressBar) progressBar.style.width = `${pct}%`;
+          if (progressText) progressText.textContent = `Testing [${e.currentTest.category}] ${e.currentTest.name}... (${e.index}/${e.total})`;
+        } else if (e.phase === 'progress') {
+          const pct = Math.round((e.index / e.total) * 100);
+          if (progressBar) progressBar.style.width = `${pct}%`;
+          if (progressText) progressText.textContent = `Completed ${e.index}/${e.total} tests (${e.passedCount} passed, ${e.failedCount} failed)`;
+          if (metricPassed) metricPassed.textContent = e.passedCount;
+          if (metricFailed) metricFailed.textContent = e.failedCount;
+
+          adminDiagResults.push(e.result);
+          renderAdminDiagRow(e.result, container);
+        } else if (e.phase === 'completed') {
+          if (progressBar) progressBar.style.width = '100%';
+          if (progressText) progressText.textContent = `Completed all ${e.summary.total} tests in ${e.summary.durationSeconds}s!`;
+          if (metricDuration) metricDuration.textContent = `${e.summary.durationSeconds}s`;
+          if (metricStatus) {
+            if (e.summary.failed === 0) {
+              metricStatus.textContent = '100% Operational';
+              metricStatus.style.color = 'var(--admin-emerald)';
+            } else {
+              metricStatus.textContent = `${e.summary.failed} Failed`;
+              metricStatus.style.color = 'var(--admin-red)';
+            }
+          }
+        }
+      });
+
+      showToast(`Diagnostic Complete: ${suiteResults.passed}/${suiteResults.total} tests passed!`, suiteResults.failed === 0 ? 'success' : 'error');
+    } catch (err) {
+      console.error('[Admin Diagnostics Error]', err);
+      showToast('Diagnostics runner encountered an error: ' + err.message, 'error');
+    } finally {
+      if (runBtn) {
+        runBtn.disabled = false;
+        runBtn.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>Re-Run All 25 Tests</span>
+        `;
+      }
+    }
+  };
+
+  function renderAdminDiagRow(item, container) {
+    if (!container) return;
+
+    let catKey = 'edit';
+    let catBadge = 'Edit Suite';
+    if (item.category === 'convert') {
+      catKey = 'convert';
+      catBadge = 'Convert Suite';
+    } else if (item.category === 'document' || item.category === 'pdf') {
+      catKey = 'pdf';
+      catBadge = 'PDF Suite';
+    }
+
+    const row = document.createElement('div');
+    row.className = `admin-diag-row ${item.status === 'pass' ? 'diag-pass' : 'diag-fail'}`;
+    row.setAttribute('data-category', catKey);
+    row.setAttribute('data-status', item.status);
+
+    const isHidden = currentAdminDiagFilter !== 'all' && 
+      (currentAdminDiagFilter === 'failed' ? item.status !== 'fail' : currentAdminDiagFilter !== catKey);
+    if (isHidden) row.style.display = 'none';
+
+    const statusBadge = item.status === 'pass'
+      ? `<span class="diag-status-tag tag-pass">PASS</span>`
+      : `<span class="diag-status-tag tag-fail">FAIL</span>`;
+
+    row.innerHTML = `
+      <div class="diag-col-status">${statusBadge}</div>
+      <div class="diag-col-info">
+        <div class="diag-test-header">
+          <span class="diag-test-name">${escapeHtml(item.name)}</span>
+          <span class="diag-cat-badge diag-cat-${catKey}">${catBadge}</span>
+          <span class="diag-duration">${item.duration}ms</span>
+        </div>
+        <div class="diag-test-detail">${escapeHtml(item.status === 'pass' ? item.details : item.error)}</div>
+      </div>
+    `;
+
+    container.appendChild(row);
+  }
+
+  window.copyAdminDiagReport = function () {
+    if (!adminDiagResults || !adminDiagResults.length) {
+      showToast('No diagnostic results to copy. Run tests first.', 'info');
+      return;
+    }
+
+    const passed = adminDiagResults.filter(r => r.status === 'pass').length;
+    const failed = adminDiagResults.filter(r => r.status === 'fail').length;
+    const now = new Date().toLocaleString();
+
+    let report = `# PixKit Tool Diagnostics Report\n`;
+    report += `Generated: ${now}\n`;
+    report += `Platform: Localhost Dev / Master Fleet Admin\n`;
+    report += `Summary: ${passed}/${adminDiagResults.length} Passed (${failed} Failed)\n\n`;
+    report += `| Status | Suite | Tool Name | Latency | Details |\n`;
+    report += `|:------:|:-----:|:----------|:-------:|:--------|\n`;
+
+    adminDiagResults.forEach(r => {
+      const s = r.status === 'pass' ? 'PASS' : 'FAIL';
+      const c = r.category.toUpperCase();
+      const det = (r.status === 'pass' ? r.details : r.error).replace(/\|/g, '\\|');
+      report += `| ${s} | ${c} | ${r.name} | ${r.duration}ms | ${det} |\n`;
+    });
+
+    navigator.clipboard.writeText(report).then(() => {
+      showToast('Diagnostic report copied to clipboard in Markdown format!', 'success');
+    }).catch(() => {
+      showToast('Failed to copy to clipboard', 'error');
+    });
+  };
 
   function initDashboard() {
     loadEcosystemState();

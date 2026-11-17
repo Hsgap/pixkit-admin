@@ -27,7 +27,11 @@
         "rotateFlip": true,
         "compress": true,
         "drawShapes": true,
-        "addText": true
+        "addText": true,
+        "blur": true,
+        "canvas": true,
+        "watermark": true,
+        "batchEdit": true
       },
       "convertTools": {
         "formatConverter": true,
@@ -35,7 +39,8 @@
         "svgToPng": true,
         "imageToPdf": true,
         "imageToIco": true,
-        "imageToBase64": true
+        "imageToBase64": true,
+        "batchConvert": true
       },
       "pdfTools": {
         "mergePdf": true,
@@ -44,7 +49,9 @@
         "pdfToImages": true,
         "imagesToPdf": true,
         "rotatePdf": true,
-        "deletePdfPages": true
+        "deletePdfPages": true,
+        "convertPdf": true,
+        "batchPdf": true
       },
       "community": {
         "leaderboard": true,
@@ -61,7 +68,11 @@
         "rotateFlip": true,
         "compress": true,
         "drawShapes": true,
-        "addText": true
+        "addText": true,
+        "blur": true,
+        "canvas": true,
+        "watermark": true,
+        "batchEdit": true
       },
       "convertTools": {
         "formatConverter": true,
@@ -69,7 +80,8 @@
         "svgToPng": true,
         "imageToPdf": true,
         "imageToIco": true,
-        "imageToBase64": true
+        "imageToBase64": true,
+        "batchConvert": true
       },
       "pdfTools": {
         "mergePdf": true,
@@ -78,7 +90,9 @@
         "pdfToImages": true,
         "imagesToPdf": true,
         "rotatePdf": true,
-        "deletePdfPages": true
+        "deletePdfPages": true,
+        "convertPdf": true,
+        "batchPdf": true
       },
       "community": {
         "leaderboard": true,
@@ -89,10 +103,10 @@
   },
   "broadcast": {
     "enabled": true,
-    "id": "announcement_001",
+    "id": "announcement_104",
     "type": "announcement",
-    "headline": "PixKit 1.0.3 is Now Available",
-    "message": "Update now on Google Play for fluid dock sliding animation, smooth tool categories, and custom save folders.",
+    "headline": "PixKit 1.0.4 is Now Available",
+    "message": "Precision 1px Crop with live 3x magnifying loupe, WhatsApp sharing, top-bar Undo/Redo & haptics.",
     "dismissible": true,
     "actionUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",
     "actionLabel": "Update via Google Play"
@@ -100,13 +114,13 @@
   "versionControl": {
     "mobile": {
       "minSupportedVersion": "1.0.0",
-      "latestVersion": "1.0.3",
+      "latestVersion": "1.0.4",
       "forceUpdate": false,
       "allowSkip": true,
       "updatePrompt": true,
-      "updateTitle": "PixKit 1.0.3 is Now Available",
+      "updateTitle": "PixKit 1.0.4 is Now Available",
       "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio",
-      "notes": "Significantly increased compression accuracy\nFluid animations across the entire UI\nRefined component depth and subtle shadows\nRedesigned dock with smooth sliding indicator\nNew dedicated in-app Privacy Policy page"
+      "notes": "Pixel-Perfect Crop Zoom System with interactive magnifying loupe\n1-pixel precision D-pad nudger\nStage zoom controls (1x, 1.5x, 2x, 3x)\nEnhanced image framing and instant WhatsApp export"
     },
     "desktop": {
       "minSupportedVersion": "1.0.0",
@@ -119,25 +133,51 @@
   "versionRegistry": {
     "mobile": [
       {
-        "versionName": "1.0.3",
-        "versionCode": 4,
-        "releaseDate": "2026-11-13",
+        "versionName": "1.0.4",
+        "versionCode": 7,
+        "releaseDate": "2026-11-16",
         "status": "latest",
         "disabled": false,
-        "disabledMessage": "This version is no longer supported. Please update on Google Play.",
+        "disabledMessage": "This version is no longer supported.",
         "updatePrompt": {
           "enabled": false,
           "type": "optional",
           "allowSkip": true,
           "title": "PixKit Studio is Up to Date",
           "notes": [
-            "Significantly increased image compression accuracy",
-            "Fluid animations and transitions across the entire UI",
-            "Refined visual depth and subtle component shadows",
-            "Redesigned floating dock with smooth sliding indicator",
-            "New dedicated in-app Privacy Policy page"
+            "Pixel-Perfect Crop Zoom System with interactive magnifying loupe",
+            "1-pixel precision D-pad nudger",
+            "Stage zoom controls (1x, 1.5x, 2x, 3x)",
+            "Pinch-to-zoom support for fine framing"
           ],
-          "targetVersion": "1.0.3",
+          "targetVersion": "1.0.4",
+          "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio"
+        },
+        "customMessage": {
+          "enabled": false,
+          "text": ""
+        },
+        "featureOverrides": {}
+      },
+      {
+        "versionName": "1.0.3",
+        "versionCode": 4,
+        "releaseDate": "2026-11-13",
+        "status": "active",
+        "disabled": false,
+        "disabledMessage": "This version is no longer supported. Please update on Google Play.",
+        "updatePrompt": {
+          "enabled": true,
+          "type": "optional",
+          "allowSkip": true,
+          "title": "PixKit 1.0.4 is Now Available",
+          "notes": [
+            "Precision 1px Crop with live 3x magnifying loupe",
+            "Universal Undo/Redo in top bar",
+            "Direct WhatsApp sharing and export",
+            "Haptic feedback toggle and performance optimizations"
+          ],
+          "targetVersion": "1.0.4",
           "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio"
         },
         "customMessage": {
@@ -157,15 +197,14 @@
           "enabled": true,
           "type": "optional",
           "allowSkip": true,
-          "title": "PixKit 1.0.3 is Now Available",
+          "title": "PixKit 1.0.4 is Now Available",
           "notes": [
-            "Significantly increased image compression accuracy",
-            "Fluid animations and transitions across the entire UI",
-            "Refined visual depth and subtle component shadows",
-            "Redesigned floating dock with smooth sliding indicator",
-            "New dedicated in-app Privacy Policy page"
+            "Precision 1px Crop with live 3x magnifying loupe",
+            "Universal Undo/Redo in top bar",
+            "Direct WhatsApp sharing and export",
+            "Haptic feedback toggle and performance optimizations"
           ],
-          "targetVersion": "1.0.3",
+          "targetVersion": "1.0.4",
           "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio"
         },
         "customMessage": {
@@ -182,13 +221,17 @@
         "disabled": false,
         "disabledMessage": "Version 1.0.0 is an offline legacy release without remote connectivity.",
         "updatePrompt": {
-          "enabled": false,
+          "enabled": true,
           "type": "optional",
-          "title": "Initial Release (Offline Legacy)",
+          "allowSkip": true,
+          "title": "PixKit 1.0.4 is Now Available",
           "notes": [
-            "Initial Play Store release"
+            "Precision 1px Crop with live 3x magnifying loupe",
+            "Universal Undo/Redo in top bar",
+            "Direct WhatsApp sharing and export",
+            "Haptic feedback toggle and performance optimizations"
           ],
-          "targetVersion": "1.0.3",
+          "targetVersion": "1.0.4",
           "updateUrl": "https://play.google.com/store/apps/details?id=com.pixkit.studio"
         },
         "customMessage": {
@@ -200,8 +243,7 @@
     ]
   },
   "stats": {
-    "totalCollectionUSD": 5.00,
+    "totalCollectionUSD": 5.0,
     "totalSupportersCount": 1
   }
 }
-

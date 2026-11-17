@@ -41,8 +41,8 @@
 
   const PixKitRemote = {
     state: null,
-    platform: 'mobile', // 'web' | 'mobile'
-    appVersion: '1.0.3',
+    platform: 'web', // 'web' | 'mobile'
+    appVersion: '1.0.2',
     configUrl: DEFAULT_CONFIG_URL,
     listeners: [],
     _toastTimer: null,
@@ -50,13 +50,7 @@
     _eventSource: null,
 
     detectPlatform: function () {
-      if (
-        window.PixKitAndroidBridge ||
-        window.Capacitor ||
-        window.location.hostname === 'localhost' ||
-        window.location.protocol === 'capacitor:' ||
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-      ) {
+      if (window.Capacitor) {
         return 'mobile';
       }
       return 'web';
@@ -64,10 +58,7 @@
 
     init: async function (options = {}) {
       this.platform = options.platform || this.detectPlatform();
-      const nativeVer = (window.PixKitAndroidBridge && window.PixKitAndroidBridge.getAppVersion)
-        ? window.PixKitAndroidBridge.getAppVersion()
-        : null;
-      this.appVersion = options.appVersion || nativeVer || window.PIXKIT_APP_VERSION || '1.0.3';
+      this.appVersion = options.appVersion || window.PIXKIT_APP_VERSION || '1.0.2';
       this.configUrl = options.configUrl || DEFAULT_CONFIG_URL;
 
       this.injectStyles();
@@ -81,53 +72,50 @@
         }
       } catch (_) {}
 
+      // 1b. Real-Time BroadcastChannel for instant same-browser cross-tab sync
+      if (typeof window !== 'undefined' && typeof window.BroadcastChannel !== 'undefined') {
+        try {
+          const fleetChan = new BroadcastChannel('pixkit_fleet_channel');
+          fleetChan.onmessage = (event) => {
+            if (event.data && (event.data.type === 'ECOSYSTEM_UPDATE' || event.data.type === 'PIXKIT_ECOSYSTEM_UPDATE')) {
+              const fresh = event.data.state || event.data.payload;
+              if (fresh && typeof fresh === 'object') {
+                this.state = fresh;
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state)); } catch (_) {}
+                this.evaluateState();
+                this.notifyListeners();
+              }
+            }
+          };
+        } catch (_) {}
+      }
+
+      // 1c. Cross-tab storage event sync
+      if (typeof window !== 'undefined') {
+        window.addEventListener('storage', (e) => {
+          if (e.key === STORAGE_KEY && e.newValue) {
+            try {
+              this.state = JSON.parse(e.newValue);
+              this.evaluateState();
+              this.notifyListeners();
+            } catch (_) {}
+          }
+        });
+      }
+
       // 2. Connect to Realtime Stream (EventSource SSE or Firebase RTDB)
       this.connectRealtimeStream();
 
       // 3. Initial sync from Cloud
       await this.sync();
 
-      // 4. Poll every 15s and immediately on app resume or tab focus
-      setInterval(() => this.sync(), 15000);
+      // 4. Poll every 2s on localhost (15s in production) and immediately on app resume or tab focus
+      const isLocalEnv = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      setInterval(() => this.sync(), isLocalEnv ? 2000 : 15000);
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) this.sync();
       });
       window.addEventListener('focus', () => this.sync());
-
-      // Intercept window.openPicker for Master Kill-Switch / retired version enforcement
-      if (typeof window.openPicker === 'function' && !window.openPicker._pixkitWrapped) {
-        const origOpenPicker = window.openPicker;
-        window.openPicker = function () {
-          if (PixKitRemote.isVersionRetired()) {
-            PixKitRemote.showRetiredModal();
-            return;
-          }
-          return origOpenPicker.apply(this, arguments);
-        };
-        window.openPicker._pixkitWrapped = true;
-      }
-
-      // Intercept window.go for tool blocking & Master Kill-Switch
-      if (typeof window.go === 'function' && !window.go._pixkitWrapped) {
-        const origGo = window.go;
-        window.go = function (id) {
-          const cleanId = String(id || '').toLowerCase().trim();
-          if (['home', 'tools', 'files', 'settings', 'complete', 'privacy-policy', 'terms'].includes(cleanId)) {
-            return origGo(id);
-          }
-          if (PixKitRemote.isVersionRetired()) {
-            PixKitRemote.showRetiredModal();
-            return;
-          }
-          const toolInfo = PixKitRemote.getToolInfo(cleanId);
-          if (toolInfo && !PixKitRemote.isFeatureEnabled(toolInfo.cat, toolInfo.key)) {
-            PixKitRemote.showToolDisabledToast(toolInfo.name);
-            return;
-          }
-          return origGo(id);
-        };
-        window.go._pixkitWrapped = true;
-      }
     },
 
     injectStyles: function () {
@@ -197,16 +185,12 @@
           const es = new EventSource(RTDB_ENDPOINT);
           this._eventSource = es;
 
-          const handleSSEUpdate = (event) => {
+          es.addEventListener('put', (event) => {
             try {
               const payload = JSON.parse(event.data);
-              if (payload && payload.data !== undefined) {
+              if (payload && payload.data && typeof payload.data === 'object') {
                 if (payload.path === '/' || !payload.path) {
-                  if (event.type === 'patch' && typeof payload.data === 'object' && this.state) {
-                    Object.assign(this.state, payload.data);
-                  } else {
-                    this.state = payload.data;
-                  }
+                  this.state = payload.data;
                 } else {
                   if (!this.state) this.state = {};
                   const pathParts = payload.path.replace(/^\//, '').split('/');
@@ -218,11 +202,7 @@
                     cur = cur[pathParts[i]];
                   }
                   if (pathParts.length > 0) {
-                    if (event.type === 'patch' && typeof payload.data === 'object' && typeof cur[pathParts[pathParts.length - 1]] === 'object') {
-                      Object.assign(cur[pathParts[pathParts.length - 1]], payload.data);
-                    } else {
-                      cur[pathParts[pathParts.length - 1]] = payload.data;
-                    }
+                    cur[pathParts[pathParts.length - 1]] = payload.data;
                   }
                 }
                 try {
@@ -232,10 +212,7 @@
                 this.notifyListeners();
               }
             } catch (_) {}
-          };
-
-          es.addEventListener('put', handleSSEUpdate);
-          es.addEventListener('patch', handleSSEUpdate);
+          });
 
           es.onerror = () => {
             this.sync();
@@ -246,6 +223,31 @@
 
     sync: async function () {
       let loaded = false;
+
+      // 0. Localhost Admin & Studio Server Direct Sync
+      if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        try {
+          let localRes = await fetch('/api/status?t=' + Date.now(), { cache: 'no-store' });
+          if (!localRes.ok || localRes.status === 404) {
+            localRes = await fetch('http://localhost:3001/api/status?t=' + Date.now(), { cache: 'no-store' });
+          }
+          if (localRes.ok) {
+            const localState = await localRes.json();
+            if (localState && typeof localState === 'object' && !localState.error) {
+              const stateChanged = JSON.stringify(this.state) !== JSON.stringify(localState);
+              this.state = localState;
+              try { localStorage.setItem(STORAGE_KEY, JSON.stringify(localState)); } catch (_) {}
+              if (stateChanged) {
+                this.evaluateState();
+                this.notifyListeners();
+              }
+              loaded = true;
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (loaded) return;
 
       // 1. Try Firebase RTDB SDK
       try {
@@ -309,92 +311,56 @@
       });
     },
 
-    // Check if current version has been retired by Master Kill-Switch or force update policy
-    isVersionRetired: function () {
-      if (!this.state) return false;
-      const clientVersion = this.appVersion || '1.0.3';
-      const plat = this.platform || 'mobile';
-
-      // 1. Check versionRegistry for this specific build
-      const registry = this.state.versionRegistry ? (this.state.versionRegistry[plat] || this.state.versionRegistry['mobile'] || []) : [];
-      if (Array.isArray(registry)) {
-        const versionEntry = registry.find(v => v.versionName === clientVersion);
-        if (versionEntry && (versionEntry.disabled === true || versionEntry.disabled === 'true')) {
-          return true;
-        }
-      }
-
-      // 2. Check general platform versionControl policy (minSupportedVersion)
-      const policy = this.state.versionControl ? (this.state.versionControl[plat] || this.state.versionControl['mobile']) : null;
-      if (policy && policy.forceUpdate && policy.minSupportedVersion) {
-        if (this.semverCompare(clientVersion, policy.minSupportedVersion) < 0) {
-          return true;
-        }
-      }
-
-      return false;
-    },
-
     // Check if current platform is under maintenance
     isMaintenanceActive: function () {
       if (!this.state || !this.state.maintenance) return false;
       const m = this.state.maintenance;
-      if (m.global === true || m.global === 'true') return true;
-      const plat = this.platform || 'mobile';
-      if (m.platforms) {
-        if (m.platforms[plat] === true || m.platforms[plat] === 'true') return true;
-        if (plat === 'mobile' && (m.platforms.mobile === true || m.platforms.android === true)) return true;
-      }
+      if (m.global) return true;
+      if (m.platforms && m.platforms[this.platform]) return true;
       return false;
     },
 
     // Check if a specific tool or community feature flag is enabled for current platform & version
     isFeatureEnabled: function (category, toolKey) {
-      // If version has been retired by Master Kill-Switch, ALL tools & features are disabled!
-      if (this.isVersionRetired()) {
-        return false;
-      }
-
       if (!this.state) return true;
 
-      const clientVersion = this.appVersion || '1.0.3';
-      const plat = this.platform || 'mobile';
-
-      // 1. Check Per-Version Feature Overrides (if explicitly disabled for this build, block it)
-      const registry = this.state.versionRegistry ? (this.state.versionRegistry[plat] || this.state.versionRegistry['mobile'] || []) : [];
+      // 1. Check Per-Version Feature Overrides FIRST (takes highest precedence)
+      let clientVersion = this.appVersion || '1.0.2';
+      if (clientVersion === '1.0.1') clientVersion = '1.0.2';
+      
+      const registry = this.state.versionRegistry ? (this.state.versionRegistry[this.platform] || []) : [];
       const versionEntry = Array.isArray(registry) ? registry.find(v => v.versionName === clientVersion) : null;
 
       if (versionEntry && versionEntry.featureOverrides && typeof versionEntry.featureOverrides === 'object') {
-        if (versionEntry.featureOverrides[toolKey] === false) {
-          return false;
+        if (versionEntry.featureOverrides[toolKey] !== undefined) {
+          return !!versionEntry.featureOverrides[toolKey];
         }
       }
 
-      // 2. Check Platform-level Feature Flags (if disabled on platform level, block it)
+      // 2. Check Platform-level Feature Flags
       const flags = this.state.featureFlags;
-      if (flags) {
-        const platFlags = flags[plat] || flags['mobile'] || flags;
-        if (category && platFlags[category] && platFlags[category][toolKey] !== undefined) {
-          if (platFlags[category][toolKey] === false) {
-            return false;
-          }
-        }
-      }
+      if (!flags) return true;
 
+      if (flags[this.platform] && flags[this.platform][category] && flags[this.platform][category][toolKey] !== undefined) {
+        return !!flags[this.platform][category][toolKey];
+      }
+      if (flags[category] && flags[category][toolKey] !== undefined) {
+        return !!flags[category][toolKey];
+      }
       return true;
     },
 
-    // Map studio toolId to ecosystem category and tool key
+    // Map studio toolId to ecosystem category and tool key (All 25 Studio Tools)
     getToolInfo: function (toolId) {
       if (!toolId) return null;
       const id = String(toolId).toLowerCase().trim();
 
       const toolMap = {
-        // Edit Tools
-        'resize': { cat: 'editTools', key: 'resize', name: 'Resize' },
-        'resize-image': { cat: 'editTools', key: 'resize', name: 'Resize' },
-        'crop': { cat: 'editTools', key: 'crop', name: 'Crop' },
-        'crop-image': { cat: 'editTools', key: 'crop', name: 'Crop' },
+        // --- 1. IMAGE EDIT SUITE (10 TOOLS) ---
+        'crop': { cat: 'editTools', key: 'crop', name: 'Crop & Aspect Ratio' },
+        'crop-image': { cat: 'editTools', key: 'crop', name: 'Crop & Aspect Ratio' },
+        'resize': { cat: 'editTools', key: 'resize', name: 'Resize & Dimensions' },
+        'resize-image': { cat: 'editTools', key: 'resize', name: 'Resize & Dimensions' },
         'rotate': { cat: 'editTools', key: 'rotateFlip', name: 'Rotate & Flip' },
         'rotate-image': { cat: 'editTools', key: 'rotateFlip', name: 'Rotate & Flip' },
         'rotateflip': { cat: 'editTools', key: 'rotateFlip', name: 'Rotate & Flip' },
@@ -405,69 +371,83 @@
         'adjust-image': { cat: 'editTools', key: 'adjust', name: 'Adjust Tones' },
         'filters': { cat: 'editTools', key: 'filters', name: 'Preset Filters' },
         'filter': { cat: 'editTools', key: 'filters', name: 'Preset Filters' },
+        'blur': { cat: 'editTools', key: 'blur', name: 'Focus & Depth (Blur)' },
+        'blur-image': { cat: 'editTools', key: 'blur', name: 'Focus & Depth (Blur)' },
+        'blur-focus': { cat: 'editTools', key: 'blur', name: 'Focus & Depth (Blur)' },
+        'canvas': { cat: 'editTools', key: 'canvas', name: 'Canvas & Framing' },
+        'canvas-expand': { cat: 'editTools', key: 'canvas', name: 'Canvas & Framing' },
+        'watermark': { cat: 'editTools', key: 'watermark', name: 'Watermark Overlay' },
+        'watermark-overlay': { cat: 'editTools', key: 'watermark', name: 'Watermark Overlay' },
+        'batch': { cat: 'editTools', key: 'batchEdit', name: 'Batch Image Processor' },
+        'batch-edit': { cat: 'editTools', key: 'batchEdit', name: 'Batch Image Processor' },
+        'batchedit': { cat: 'editTools', key: 'batchEdit', name: 'Batch Image Processor' },
         'draw': { cat: 'editTools', key: 'drawShapes', name: 'Draw & Shapes' },
         'drawshapes': { cat: 'editTools', key: 'drawShapes', name: 'Draw & Shapes' },
         'draw-shapes': { cat: 'editTools', key: 'drawShapes', name: 'Draw & Shapes' },
         'text': { cat: 'editTools', key: 'addText', name: 'Add Text' },
         'addtext': { cat: 'editTools', key: 'addText', name: 'Add Text' },
         'add-text': { cat: 'editTools', key: 'addText', name: 'Add Text' },
-        'blur': { cat: 'editTools', key: 'adjust', name: 'Blur Tool' },
-        'blur-image': { cat: 'editTools', key: 'adjust', name: 'Blur Tool' },
-        'blur-focus': { cat: 'editTools', key: 'adjust', name: 'Blur & Focus' },
 
-        // Convert Tools
-        'convert-format': { cat: 'convertTools', key: 'formatConverter', name: 'Format Converter' },
-        'convert': { cat: 'convertTools', key: 'formatConverter', name: 'Format Converter' },
-        'convert-image': { cat: 'convertTools', key: 'formatConverter', name: 'Format Converter' },
-        'formatconverter': { cat: 'convertTools', key: 'formatConverter', name: 'Format Converter' },
-        'format-converter': { cat: 'convertTools', key: 'formatConverter', name: 'Format Converter' },
-        'format': { cat: 'convertTools', key: 'formatConverter', name: 'Format Converter' },
-        'convert-svg': { cat: 'convertTools', key: 'svgToPng', name: 'SVG to PNG Converter' },
-        'svg-to-png': { cat: 'convertTools', key: 'svgToPng', name: 'SVG to PNG Converter' },
-        'svgtopng': { cat: 'convertTools', key: 'svgToPng', name: 'SVG to PNG Converter' },
-        'convert-heic': { cat: 'convertTools', key: 'heicToJpg', name: 'HEIC to JPG Converter' },
-        'heic-to-jpg': { cat: 'convertTools', key: 'heicToJpg', name: 'HEIC to JPG Converter' },
-        'heic': { cat: 'convertTools', key: 'heicToJpg', name: 'HEIC to JPG Converter' },
-        'heictojpg': { cat: 'convertTools', key: 'heicToJpg', name: 'HEIC to JPG Converter' },
-        'convert-pdf': { cat: 'convertTools', key: 'imageToPdf', name: 'Image to PDF' },
-        'imagetopdf': { cat: 'convertTools', key: 'imageToPdf', name: 'Image to PDF' },
-        'image-to-pdf': { cat: 'convertTools', key: 'imageToPdf', name: 'Image to PDF' },
-        'image-to-pdf-convert': { cat: 'convertTools', key: 'imageToPdf', name: 'Image to PDF' },
-        'convert-ico': { cat: 'convertTools', key: 'imageToIco', name: 'Image to ICO' },
-        'png-to-ico': { cat: 'convertTools', key: 'imageToIco', name: 'Image to ICO' },
-        'image-to-ico': { cat: 'convertTools', key: 'imageToIco', name: 'Image to ICO' },
-        'favicon-generator': { cat: 'convertTools', key: 'imageToIco', name: 'Favicon Generator' },
-        'convert-base64': { cat: 'convertTools', key: 'imageToBase64', name: 'Image to Base64' },
-        'image-to-base64': { cat: 'convertTools', key: 'imageToBase64', name: 'Image to Base64' },
-        'imagetobase64': { cat: 'convertTools', key: 'imageToBase64', name: 'Image to Base64' },
+        // --- 2. FORMAT CONVERSION SUITE (7 TOOLS) ---
+        'convert-format': { cat: 'convertTools', key: 'formatConverter', name: 'Target Format & Quality' },
+        'convert': { cat: 'convertTools', key: 'formatConverter', name: 'Target Format & Quality' },
+        'convert-image': { cat: 'convertTools', key: 'formatConverter', name: 'Target Format & Quality' },
+        'formatconverter': { cat: 'convertTools', key: 'formatConverter', name: 'Target Format & Quality' },
+        'format-converter': { cat: 'convertTools', key: 'formatConverter', name: 'Target Format & Quality' },
+        'format': { cat: 'convertTools', key: 'formatConverter', name: 'Target Format & Quality' },
+        'png-to-jpg': { cat: 'convertTools', key: 'formatConverter', name: 'PNG to JPG' },
+        'jpg-to-png': { cat: 'convertTools', key: 'formatConverter', name: 'JPG to PNG' },
+        'webp-to-jpg': { cat: 'convertTools', key: 'formatConverter', name: 'WebP to JPG' },
+        'jpg-to-webp': { cat: 'convertTools', key: 'formatConverter', name: 'JPG to WebP' },
+        'convert-heic': { cat: 'convertTools', key: 'heicToJpg', name: 'Apple HEIC Decoder' },
+        'heic-to-jpg': { cat: 'convertTools', key: 'heicToJpg', name: 'Apple HEIC Decoder' },
+        'heic': { cat: 'convertTools', key: 'heicToJpg', name: 'Apple HEIC Decoder' },
+        'heictojpg': { cat: 'convertTools', key: 'heicToJpg', name: 'Apple HEIC Decoder' },
+        'convert-svg': { cat: 'convertTools', key: 'svgToPng', name: 'SVG Vector Rasterizer' },
+        'svg-to-png': { cat: 'convertTools', key: 'svgToPng', name: 'SVG Vector Rasterizer' },
+        'svgtopng': { cat: 'convertTools', key: 'svgToPng', name: 'SVG Vector Rasterizer' },
+        'svg': { cat: 'convertTools', key: 'svgToPng', name: 'SVG Vector Rasterizer' },
+        'convert-ico': { cat: 'convertTools', key: 'imageToIco', name: 'Favicon & ICO Package' },
+        'png-to-ico': { cat: 'convertTools', key: 'imageToIco', name: 'Favicon & ICO Package' },
+        'image-to-ico': { cat: 'convertTools', key: 'imageToIco', name: 'Favicon & ICO Package' },
+        'favicon-generator': { cat: 'convertTools', key: 'imageToIco', name: 'Favicon & ICO Package' },
+        'convert-base64': { cat: 'convertTools', key: 'imageToBase64', name: 'Base64 & Data URLs' },
+        'image-to-base64': { cat: 'convertTools', key: 'imageToBase64', name: 'Base64 & Data URLs' },
+        'imagetobase64': { cat: 'convertTools', key: 'imageToBase64', name: 'Base64 & Data URLs' },
+        'base64': { cat: 'convertTools', key: 'imageToBase64', name: 'Base64 & Data URLs' },
+        'convert-pdf': { cat: 'convertTools', key: 'imageToPdf', name: 'Images to PDF Document' },
+        'imagetopdf': { cat: 'convertTools', key: 'imageToPdf', name: 'Images to PDF Document' },
+        'image-to-pdf': { cat: 'convertTools', key: 'imageToPdf', name: 'Images to PDF Document' },
+        'image-to-pdf-convert': { cat: 'convertTools', key: 'imageToPdf', name: 'Images to PDF Document' },
+        'batch-convert': { cat: 'convertTools', key: 'batchConvert', name: 'Batch Convert Processor' },
+        'batchconvert': { cat: 'convertTools', key: 'batchConvert', name: 'Batch Convert Processor' },
 
-        // PDF Tools
-        'doc-merge-pdf': { cat: 'pdfTools', key: 'mergePdf', name: 'Merge PDF' },
-        'merge-pdf': { cat: 'pdfTools', key: 'mergePdf', name: 'Merge PDF' },
-        'mergepdf': { cat: 'pdfTools', key: 'mergePdf', name: 'Merge PDF' },
-        'doc-split-pdf': { cat: 'pdfTools', key: 'splitPdf', name: 'Split PDF' },
-        'split-pdf': { cat: 'pdfTools', key: 'splitPdf', name: 'Split PDF' },
-        'splitpdf': { cat: 'pdfTools', key: 'splitPdf', name: 'Split PDF' },
+        // --- 3. PDF DOCUMENT SUITE (8 TOOLS) ---
+        'doc-convert-pdf': { cat: 'pdfTools', key: 'convertPdf', name: 'Convert to PDF Document' },
+        'doc-pdf-to-images': { cat: 'pdfTools', key: 'pdfToImages', name: 'PDF to Images Rasterizer' },
+        'pdf-to-images': { cat: 'pdfTools', key: 'pdfToImages', name: 'PDF to Images Rasterizer' },
+        'pdf-to-jpg': { cat: 'pdfTools', key: 'pdfToImages', name: 'PDF to Images Rasterizer' },
+        'pdf-to-image': { cat: 'pdfTools', key: 'pdfToImages', name: 'PDF to Images Rasterizer' },
+        'pdftoimages': { cat: 'pdfTools', key: 'pdfToImages', name: 'PDF to Images Rasterizer' },
+        'doc-merge-pdf': { cat: 'pdfTools', key: 'mergePdf', name: 'Merge PDF Documents' },
+        'merge-pdf': { cat: 'pdfTools', key: 'mergePdf', name: 'Merge PDF Documents' },
+        'mergepdf': { cat: 'pdfTools', key: 'mergePdf', name: 'Merge PDF Documents' },
+        'doc-split-pdf': { cat: 'pdfTools', key: 'splitPdf', name: 'Split & Extract PDF Pages' },
+        'split-pdf': { cat: 'pdfTools', key: 'splitPdf', name: 'Split & Extract PDF Pages' },
+        'splitpdf': { cat: 'pdfTools', key: 'splitPdf', name: 'Split & Extract PDF Pages' },
         'doc-compress-pdf': { cat: 'pdfTools', key: 'compressPdf', name: 'Compress PDF' },
         'compress-pdf': { cat: 'pdfTools', key: 'compressPdf', name: 'Compress PDF' },
         'compresspdf': { cat: 'pdfTools', key: 'compressPdf', name: 'Compress PDF' },
-        'doc-pdf-to-images': { cat: 'pdfTools', key: 'pdfToImages', name: 'PDF to Images' },
-        'pdf-to-images': { cat: 'pdfTools', key: 'pdfToImages', name: 'PDF to Images' },
-        'pdf-to-jpg': { cat: 'pdfTools', key: 'pdfToImages', name: 'PDF to Images' },
-        'pdf-to-image': { cat: 'pdfTools', key: 'pdfToImages', name: 'PDF to Images' },
-        'pdftoimages': { cat: 'pdfTools', key: 'pdfToImages', name: 'PDF to Images' },
-        'doc-images-to-pdf': { cat: 'pdfTools', key: 'imagesToPdf', name: 'Images to PDF' },
-        'images-to-pdf': { cat: 'pdfTools', key: 'imagesToPdf', name: 'Images to PDF' },
-        'jpg-to-pdf': { cat: 'pdfTools', key: 'imagesToPdf', name: 'Images to PDF' },
-        'imagestopdf': { cat: 'pdfTools', key: 'imagesToPdf', name: 'Images to PDF' },
-        'doc-rotate-pdf': { cat: 'pdfTools', key: 'rotatePdf', name: 'Rotate PDF' },
-        'rotate-pdf': { cat: 'pdfTools', key: 'rotatePdf', name: 'Rotate PDF' },
-        'rotatepdf': { cat: 'pdfTools', key: 'rotatePdf', name: 'Rotate PDF' },
+        'doc-rotate-pdf': { cat: 'pdfTools', key: 'rotatePdf', name: 'Rotate PDF Pages' },
+        'rotate-pdf': { cat: 'pdfTools', key: 'rotatePdf', name: 'Rotate PDF Pages' },
+        'rotatepdf': { cat: 'pdfTools', key: 'rotatePdf', name: 'Rotate PDF Pages' },
         'doc-delete-pdf': { cat: 'pdfTools', key: 'deletePdfPages', name: 'Delete PDF Pages' },
         'delete-pdf-pages': { cat: 'pdfTools', key: 'deletePdfPages', name: 'Delete PDF Pages' },
         'deletepdfpages': { cat: 'pdfTools', key: 'deletePdfPages', name: 'Delete PDF Pages' },
+        'batch-pdf': { cat: 'pdfTools', key: 'batchPdf', name: 'Batch PDF Processor' },
+        'batchpdf': { cat: 'pdfTools', key: 'batchPdf', name: 'Batch PDF Processor' },
 
-        // Community Features
+        // --- 4. COMMUNITY FEATURES ---
         'leaderboard': { cat: 'community', key: 'leaderboard', name: 'Supporter Leaderboard' },
         'supportmodal': { cat: 'community', key: 'supportModal', name: 'Donate / Support' },
         'support': { cat: 'community', key: 'supportModal', name: 'Donate / Support' },
@@ -478,7 +458,6 @@
 
       return toolMap[id] || null;
     },
-
     // Check if tool access is allowed before opening workspace
     checkToolAccess: function (toolId, suppressToast = false) {
       const mapped = this.getToolInfo(toolId);
@@ -528,22 +507,8 @@
       return null;
     },
 
-    // Enforce Active Tool Eviction: Kick out user if currently in a disabled tool or if version is retired
+    // Enforce Active Tool Eviction: Kick out user if currently in a disabled tool
     enforceActiveToolAccess: function () {
-      const isRetired = this.isVersionRetired();
-
-      // If version is retired by Master Kill-Switch and user is inside an active editor workspace, evict immediately!
-      if (isRetired) {
-        const page = window.location.pathname.split('/').pop().replace('.html', '').toLowerCase();
-        if (page && !['home', 'index', 'tools', 'files', 'settings', 'privacy-policy', 'terms'].includes(page)) {
-          this.showRetiredModal();
-          setTimeout(() => {
-            window.location.href = 'home.html';
-          }, 800);
-          return;
-        }
-      }
-
       const currentTool = this.getCurrentActiveTool();
       if (!currentTool) return;
 
@@ -554,18 +519,14 @@
       if (!isEnabled) {
         console.warn(`[PixKitRemote] Tool "${toolInfo.name}" (${currentTool}) has been disabled remotely by admin. Evicting user to studio home.`);
         
-        if (isRetired) {
-          this.showRetiredModal();
-        } else {
-          this.showToolEvictedToast(toolInfo.name);
-        }
+        this.showToolEvictedToast(toolInfo.name);
 
         if (this.platform === 'mobile') {
           setTimeout(() => {
             if (typeof window.go === 'function') {
-              window.go('home');
+              window.go('tools');
             } else {
-              window.location.href = 'home.html';
+              window.location.href = 'tools.html';
             }
           }, 1200);
           return;
@@ -598,7 +559,6 @@
 
     // Check if an entire category is completely disabled
     isCategoryAllDisabled: function (category) {
-      if (this.isVersionRetired()) return true;
       if (!this.state || !this.state.featureFlags) return false;
       const flags = this.state.featureFlags;
       const catFlags = (flags.web && flags.web[category]) || flags[category];
@@ -662,19 +622,7 @@
       document.body.appendChild(backdrop);
     },
 
-    showRetiredModal: function () {
-      this.showMaintenanceModal(
-        'Update Required',
-        'This version of PixKit is retired. Please update to the latest version on Google Play to continue using PixKit.',
-        '🚨'
-      );
-    },
-
     showToolDisabledToast: function (toolName) {
-      if (this.isVersionRetired()) {
-        this.showRetiredModal();
-        return;
-      }
       this.showMaintenanceModal(
         (toolName || 'Tool') + ' Paused',
         'This feature is temporarily paused for scheduled maintenance. Back shortly!',
@@ -683,10 +631,6 @@
     },
 
     showToolEvictedToast: function (toolName) {
-      if (this.isVersionRetired()) {
-        this.showRetiredModal();
-        return;
-      }
       this.showMaintenanceModal(
         (toolName || 'Feature') + ' Notice',
         'This feature was temporarily paused for scheduled maintenance. Safely returned to home.',
@@ -889,85 +833,6 @@
 
     // Visually update tool cards and buttons in Home/Edit/Convert/Doc suites, hubs and landing pages
     applyToolCardsState: function () {
-      const isRetired = this.isVersionRetired();
-
-      // 1. Home Screen Upload Box & Dropzone enforcement
-      const uploadBox = document.querySelector('.upload');
-      const uploadBtn = document.querySelector('.upload .button');
-
-      if (uploadBox) {
-        if (isRetired) {
-          uploadBox.classList.add('pixkit-tool-card-disabled');
-          uploadBox.style.opacity = '0.35';
-          uploadBox.style.filter = 'grayscale(1)';
-          uploadBox.style.cursor = 'not-allowed';
-          if (!uploadBox._pixkitRetiredHandler) {
-            uploadBox._pixkitRetiredHandler = (e) => {
-              if (PixKitRemote.isVersionRetired()) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                PixKitRemote.showRetiredModal();
-                return false;
-              }
-            };
-            uploadBox.addEventListener('click', uploadBox._pixkitRetiredHandler, true);
-          }
-        } else {
-          uploadBox.classList.remove('pixkit-tool-card-disabled');
-          uploadBox.style.removeProperty('opacity');
-          uploadBox.style.removeProperty('filter');
-          uploadBox.style.removeProperty('cursor');
-          if (uploadBox._pixkitRetiredHandler) {
-            uploadBox.removeEventListener('click', uploadBox._pixkitRetiredHandler, true);
-            uploadBox._pixkitRetiredHandler = null;
-          }
-        }
-      }
-
-      if (uploadBtn) {
-        if (isRetired) {
-          uploadBtn.style.opacity = '0.45';
-          uploadBtn.style.cursor = 'not-allowed';
-        } else {
-          uploadBtn.style.removeProperty('opacity');
-          uploadBtn.style.removeProperty('cursor');
-        }
-      }
-
-      // 2. Hub Overview Links (Convert Hub & PDF & Docs)
-      const hubLinks = document.querySelectorAll('.hub-grid a, button.toolrow[onclick*="convert.html"], button.toolrow[onclick*="documents.html"]');
-      hubLinks.forEach(link => {
-        if (isRetired) {
-          link.classList.add('pixkit-tool-card-disabled');
-          link.style.opacity = '0.35';
-          link.style.filter = 'grayscale(1)';
-          link.style.cursor = 'not-allowed';
-          if (!link._pixkitRetiredHandler) {
-            link._pixkitRetiredHandler = (e) => {
-              if (PixKitRemote.isVersionRetired()) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                PixKitRemote.showRetiredModal();
-                return false;
-              }
-            };
-            link.addEventListener('click', link._pixkitRetiredHandler, true);
-          }
-        } else {
-          link.classList.remove('pixkit-tool-card-disabled');
-          link.style.removeProperty('opacity');
-          link.style.removeProperty('filter');
-          link.style.removeProperty('cursor');
-          if (link._pixkitRetiredHandler) {
-            link.removeEventListener('click', link._pixkitRetiredHandler, true);
-            link._pixkitRetiredHandler = null;
-          }
-        }
-      });
-
-      // 3. All Tool Cards, Quick Buttons, and Tool Rows
       const toolCards = document.querySelectorAll(
         '[onclick*="openToolWorkspace"], [onclick*="go("], .tool-row-card, .shortcut-pill, .seo-tool-card, .quick, .toolrow, a[href*=".html"]'
       );
@@ -979,7 +844,7 @@
         if (match && match[1]) {
           toolId = match[1];
         } else {
-          match = onclickAttr.match(/(?:window\.location\.href\s*=\s*['"]|go\(['"])([a-zA-Z0-9_-]+)(?:\.html)?['"]/i);
+          match = onclickAttr.match(/go\(['"]([^'"]+)['"]\)/);
           if (match && match[1]) {
             toolId = match[1];
           } else {
@@ -987,8 +852,6 @@
             const hrefMatch = href.match(/([a-zA-Z0-9_-]+)(?:\.html)?$/);
             if (hrefMatch && hrefMatch[1]) {
               toolId = hrefMatch[1];
-            } else if (card.dataset && card.dataset.tool) {
-              toolId = card.dataset.tool;
             }
           }
         }
@@ -1000,31 +863,25 @@
         }
 
         const toolInfo = this.getToolInfo(cleanToolId);
-        const isEnabled = isRetired ? false : (toolInfo ? this.isFeatureEnabled(toolInfo.cat, toolInfo.key) : true);
+        if (!toolInfo) return;
 
+        const isEnabled = this.isFeatureEnabled(toolInfo.cat, toolInfo.key);
         if (!isEnabled) {
           card.classList.add('pixkit-tool-card-disabled');
           card.style.opacity = '0.35';
           card.style.filter = 'grayscale(1)';
           card.style.cursor = 'not-allowed';
-          card.setAttribute('data-disabled-notice', isRetired ? 'This version of PixKit is retired' : ((toolInfo?.name || 'Feature') + ' is paused for maintenance'));
+          card.setAttribute('data-disabled-notice', toolInfo.name + ' is paused for maintenance');
 
           // Intercept click in capturing phase before workspace or navigation can fire
           if (!card._pixkitDisabledHandler) {
             card._pixkitDisabledHandler = (e) => {
-              if (PixKitRemote.isVersionRetired()) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                PixKitRemote.showRetiredModal();
-                return false;
-              }
-              const currentEnabled = toolInfo ? PixKitRemote.isFeatureEnabled(toolInfo.cat, toolInfo.key) : true;
+              const currentEnabled = PixKitRemote.isFeatureEnabled(toolInfo.cat, toolInfo.key);
               if (!currentEnabled) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
-                PixKitRemote.showToolDisabledToast(toolInfo?.name);
+                PixKitRemote.showToolDisabledToast(toolInfo.name);
                 return false;
               }
             };
@@ -1032,9 +889,9 @@
           }
         } else {
           card.classList.remove('pixkit-tool-card-disabled');
-          card.style.removeProperty('opacity');
-          card.style.removeProperty('filter');
-          card.style.removeProperty('cursor');
+          card.style.opacity = '';
+          card.style.filter = '';
+          card.style.cursor = '';
           card.removeAttribute('data-disabled-notice');
           if (card._pixkitDisabledHandler) {
             card.removeEventListener('click', card._pixkitDisabledHandler, true);
@@ -1044,7 +901,7 @@
       });
     },
 
-    // Evaluate ecosystem state and render maintenance overlay, top banner, and flag rules
+    // Evaluate ecosystem state and render maintenance overlay, broadcast banner, and flag rules
     evaluateState: function () {
       if (!this.state) return;
 
@@ -1055,16 +912,23 @@
         this.removeMaintenanceOverlay();
       }
 
-      // 2. Community Feature Flags Check (Leaderboard & Support Modal)
+      // 2. Broadcast Announcement Check
+      if (this.state.broadcast && this.state.broadcast.enabled) {
+        this.renderBroadcastBanner(this.state.broadcast);
+      } else {
+        this.removeBroadcastBanner();
+      }
+
+      // 3. Community Feature Flags Check (Leaderboard & Support Modal)
       this.applyCommunityFeatureFlags();
 
-      // 3. Tool Cards Visual State (Paused/Active Badging & Master Kill-Switch blocking)
+      // 4. Tool Cards Visual State (Paused/Active Badging)
       this.applyToolCardsState();
 
-      // 4. Active Tool Eviction Check (Kick out if tool was closed while in use)
+      // 5. Active Tool Eviction Check (Kick out if tool was closed while in use)
       this.enforceActiveToolAccess();
 
-      // 5. App Version Control, Top Banners (Update / Retired / Broadcast)
+      // 6. App Version Control & Fleet Policy Enforcement
       this.enforceVersionPolicy();
     },
 
@@ -1085,100 +949,203 @@
     enforceVersionPolicy: function () {
       if (!this.state) return;
 
-      const clientVersion = this.appVersion || '1.0.3';
-      const plat = this.platform || 'mobile';
+      let clientVersion = this.appVersion || '1.0.2';
+      if (clientVersion === '1.0.1') clientVersion = '1.0.2';
+      const isMobile = this.platform === 'mobile';
 
-      // Always suppress and clear legacy full-screen takeover dialogs completely
-      this.removeMobileUpdateDialog();
-      this.removeForceUpdateOverlay();
-
-      // 1. Check Per-Version Master Kill-Switch (Retire / Disable this Version)
-      if (this.isVersionRetired()) {
-        const registry = this.state.versionRegistry ? (this.state.versionRegistry[plat] || this.state.versionRegistry['mobile'] || []) : [];
-        const versionEntry = Array.isArray(registry) ? registry.find(v => v.versionName === clientVersion) : null;
-        const updateUrl = versionEntry?.updatePrompt?.updateUrl || this.state.versionControl?.mobile?.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
-        const message = versionEntry?.disabledMessage || 'Please update to the latest version to continue using PixKit.';
-
-        // Render RED urgent banner at top right below .appbar, non-dismissible
-        this.renderTopBanner({
-          id: 'version_retired_' + clientVersion,
-          type: 'urgent',
-          icon: '🚨',
-          headline: 'Update Required',
-          message: message,
-          actionLabel: 'Update via Google Play',
-          actionUrl: updateUrl,
-          dismissible: false
-        });
-        return;
-      }
-
-      // 2. Check Per-Version Update Prompt (Soft / Optional or Force)
-      const registry = this.state.versionRegistry ? (this.state.versionRegistry[plat] || this.state.versionRegistry['mobile'] || []) : [];
+      // 1. Check Version Registry (Per-Version Controls)
+      const registry = this.state.versionRegistry ? (this.state.versionRegistry[this.platform] || []) : [];
       const versionEntry = Array.isArray(registry) ? registry.find(v => v.versionName === clientVersion) : null;
 
+      // Check Per-Version Master Kill-Switch
+      if (versionEntry && versionEntry.disabled) {
+        this.renderForceUpdateOverlay({
+          latestVersion: this.state.versionControl?.mobile?.latestVersion || '1.0.3',
+          updateUrl: versionEntry.updatePrompt?.updateUrl || this.state.versionControl?.mobile?.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio',
+          notes: versionEntry.disabledMessage || `Version ${clientVersion} has been retired. Please update to continue creating.`
+        }, clientVersion, 'Version Retired');
+        return;
+      } else {
+        this.removeForceUpdateOverlay();
+      }
+
+      // Check Per-Version Update Prompt
       if (versionEntry && versionEntry.updatePrompt && versionEntry.updatePrompt.enabled) {
         const prompt = versionEntry.updatePrompt;
         const targetVer = prompt.targetVersion || this.state.versionControl?.mobile?.latestVersion || '1.0.3';
         const allowSkip = prompt.allowSkip !== false && prompt.type !== 'force';
 
-        // Only prompt if client version is older than target
-        if (this.semverCompare(clientVersion, targetVer) < 0) {
-          const notesStr = Array.isArray(prompt.notes)
-            ? prompt.notes.join('. ')
-            : (prompt.notes || 'A newer build of PixKit is ready. Update now on Google Play for new features and bug fixes.');
-          this.renderTopBanner({
-            id: 'version_update_' + targetVer,
-            type: allowSkip ? 'announcement' : 'urgent',
-            icon: allowSkip ? '✨' : '🚨',
-            headline: prompt.title || `PixKit ${targetVer} is Now Available`,
-            message: notesStr,
-            actionLabel: 'Update via Google Play',
-            actionUrl: prompt.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio',
-            dismissible: allowSkip
+        if (allowSkip) {
+          const cooldownKey = 'pixkit_update_cooldown_' + targetVer;
+          let isCooling = false;
+          try {
+            const until = parseInt(localStorage.getItem(cooldownKey) || '0', 10);
+            if (Date.now() < until) isCooling = true;
+          } catch (_) {}
+
+          if (!isCooling) {
+            this.renderMobileUpdateDialog({
+              title: prompt.title || `PixKit ${targetVer} is Available`,
+              notes: prompt.notes || ['Performance improvements', 'Bug fixes'],
+              targetVersion: targetVer,
+              updateUrl: prompt.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio',
+              allowSkip: true
+            });
+            return;
+          }
+        } else {
+          this.renderMobileUpdateDialog({
+            title: prompt.title || `PixKit ${targetVer} is Available`,
+            notes: prompt.notes || ['Performance improvements', 'Bug fixes'],
+            targetVersion: targetVer,
+            updateUrl: prompt.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio',
+            allowSkip: false
           });
           return;
         }
-      }
-
-      // 3. Fallback: Fleet-wide Version Policy check
-      const policy = this.state.versionControl ? (this.state.versionControl[plat] || this.state.versionControl['mobile']) : null;
-      if (policy) {
-        const latestVer = policy.latestVersion || '1.0.3';
-        const isBelowLatest = this.semverCompare(clientVersion, latestVer) < 0;
-
-        if (isBelowLatest && policy.updatePrompt) {
-          const allowSkip = policy.allowSkip !== false && !policy.forceUpdate;
-          const notesStr = Array.isArray(policy.notes)
-            ? policy.notes.join('. ')
-            : (policy.notes || 'A newer build of PixKit is ready. Update now on Google Play.');
-          this.renderTopBanner({
-            id: 'fleet_update_' + latestVer,
-            type: allowSkip ? 'announcement' : 'urgent',
-            icon: allowSkip ? '✨' : '🚨',
-            headline: policy.updateTitle || `PixKit ${latestVer} is Now Available`,
-            message: notesStr,
-            actionLabel: 'Update via Google Play',
-            actionUrl: policy.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio',
-            dismissible: allowSkip
-          });
-          return;
-        }
-      }
-
-      // 4. If no update or retired banner is active, display General Broadcast announcement if enabled
-      if (this.state.broadcast && this.state.broadcast.enabled) {
-        this.renderTopBanner(this.state.broadcast);
       } else {
-        this.removeTopBanner();
+        this.removeMobileUpdateDialog();
+      }
+
+      // Fallback: General Version Policy (Fleet Wide Policy)
+      const policy = this.state.versionControl ? this.state.versionControl[this.platform] : null;
+      if (!policy) return;
+
+      const minVer = policy.minSupportedVersion || '1.0.0';
+      const latestVer = policy.latestVersion || '1.0.0';
+      const forceUpdate = !!policy.forceUpdate;
+
+      const isBelowMin = this.semverCompare(clientVersion, minVer) < 0;
+      const isBelowLatest = this.semverCompare(clientVersion, latestVer) < 0;
+
+      if ((isBelowMin && forceUpdate) || (isBelowLatest && policy.updatePrompt)) {
+        const allowSkip = policy.allowSkip !== false && !forceUpdate;
+        const targetVer = latestVer;
+
+        if (allowSkip) {
+          const cooldownKey = 'pixkit_update_cooldown_' + targetVer;
+          let isCooling = false;
+          try {
+            const until = parseInt(localStorage.getItem(cooldownKey) || '0', 10);
+            if (Date.now() < until) isCooling = true;
+          } catch (_) {}
+
+          if (!isCooling) {
+            this.renderMobileUpdateDialog({
+              title: policy.updateTitle || `PixKit ${targetVer} is Available`,
+              notes: Array.isArray(policy.notes) ? policy.notes : (policy.notes ? policy.notes.split('\n') : ['Bug fixes and performance improvements']),
+              targetVersion: targetVer,
+              updateUrl: policy.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio',
+              allowSkip: true
+            });
+            return;
+          }
+        } else {
+          this.renderMobileUpdateDialog({
+            title: policy.updateTitle || `PixKit ${targetVer} is Available`,
+            notes: Array.isArray(policy.notes) ? policy.notes : (policy.notes ? policy.notes.split('\n') : ['Bug fixes and performance improvements']),
+            targetVersion: targetVer,
+            updateUrl: policy.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio',
+            allowSkip: false
+          });
+          return;
+        }
+      } else {
+        this.removeMobileUpdateDialog();
+        this.removeForceUpdateOverlay();
+      }
+
+      // Soft Update Notification for Web/Desktop
+      if (!isMobile && isBelowLatest) {
+        const dismissedKey = 'pixkit_dismissed_update_' + latestVer;
+        try {
+          if (!sessionStorage.getItem(dismissedKey)) {
+            this.renderSoftUpdateToast(policy, clientVersion);
+          }
+        } catch (_) {}
+      } else if (!isMobile) {
+        this.removeSoftUpdateToast();
       }
     },
 
-    renderMobileUpdateDialog: function () {
-      this.removeMobileUpdateDialog();
+    renderMobileUpdateDialog: function (config) {
+      let modal = document.getElementById('pixkit-mobile-update-modal');
+      const targetVer = config.targetVersion || '1.0.3';
+      const title = config.title || `PixKit ${targetVer} is Available`;
+      const updateUrl = config.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
+      const notesList = Array.isArray(config.notes) ? config.notes : (typeof config.notes === 'string' ? config.notes.split('\n') : ['Bug fixes and performance improvements']);
+      const allowSkip = config.allowSkip !== false;
+
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'pixkit-mobile-update-modal';
+        modal.style.cssText = `
+          position: fixed;
+          inset: 0;
+          z-index: 999999999;
+          background: rgba(10, 11, 8, 0.82);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          box-sizing: border-box;
+          font-family: -apple-system, BlinkMacSystemFont, "DM Sans", "Segoe UI", Roboto, sans-serif;
+          animation: pixkitFadeIn 0.22s ease-out;
+        `;
+        document.body.appendChild(modal);
+      }
+
+      const notesHtml = notesList.map(s => String(s).trim().replace(/^[-•*]\s*/, '')).filter(Boolean).map(n => `
+        <li style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 12px; color: #c4c7b8; line-height: 1.45;">
+          <span style="color: #d7f36a; font-weight: 800; line-height: 1.2;">✓</span>
+          <span>${this.escapeHtml(n)}</span>
+        </li>
+      `).join('');
+
+      modal.innerHTML = `
+        <div style="width: 100%; max-width: 360px; background: linear-gradient(180deg, #181a13 0%, #12130e 100%); border: 1px solid #2a2d21; border-top: 1px solid rgba(215, 243, 106, 0.28); border-radius: 24px; padding: 26px 20px 22px; box-shadow: 0 16px 50px rgba(0, 0, 0, 0.75); box-sizing: border-box; text-align: center; animation: pixkitPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;">
+          <div style="width: 48px; height: 48px; border-radius: 16px; background: rgba(215, 243, 106, 0.12); color: #d7f36a; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 14px; border: 1px solid rgba(215, 243, 106, 0.28);">
+            ✳
+          </div>
+          
+          <div style="display: inline-block; padding: 3px 12px; border-radius: 999px; background: ${allowSkip ? 'rgba(215, 243, 106, 0.12)' : 'rgba(255, 255, 255, 0.08)'}; border: 1px solid ${allowSkip ? 'rgba(215, 243, 106, 0.25)' : 'rgba(255, 255, 255, 0.16)'}; font-size: 10.5px; font-weight: 800; color: ${allowSkip ? '#d7f36a' : '#f2f3ec'}; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">
+            ${allowSkip ? 'New Version Available' : 'Update Required'}
+          </div>
+
+          <h2 style="font-size: 19px; font-weight: 800; margin: 0 0 6px; color: #ffffff; letter-spacing: -0.4px;">${this.escapeHtml(title)}</h2>
+          <p style="font-size: 12.5px; line-height: 1.45; color: #9fa197; margin: 0 0 16px;">
+            ${allowSkip ? `A newer build (v${this.escapeHtml(targetVer)}) is ready. Update now for the latest features and fixes.` : `Your current app build requires an update to v${this.escapeHtml(targetVer)} to continue.`}
+          </p>
+
+          <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid #282a20; border-radius: 14px; padding: 12px 14px; margin-bottom: 18px; text-align: left;">
+            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #d7f36a; letter-spacing: 0.5px; margin-bottom: 8px;">What's New in v${this.escapeHtml(targetVer)}:</div>
+            <ul style="margin: 0; padding: 0; list-style: none;">
+              ${notesHtml}
+            </ul>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <a href="${this.escapeHtml(updateUrl)}" target="_blank" onclick="PixKitRemote.handleOpenStore('${this.escapeHtml(updateUrl)}')" style="display: block; width: 100%; box-sizing: border-box; text-align: center; background: linear-gradient(180deg, #e4fb7c 0%, #d7f36a 55%, #c0de4d 100%); color: #14160d; font-weight: 800; font-size: 13.5px; padding: 13px 20px; border-radius: 14px; text-decoration: none; border: 1px solid #a8c838; border-top: 1px solid #f2ffd0; box-shadow: 0 4px 18px rgba(215, 243, 106, 0.3); cursor: pointer;">
+              Update via Google Play &rarr;
+            </a>
+            ${allowSkip ? `
+              <button type="button" onclick="PixKitRemote.dismissMobileUpdate('${this.escapeHtml(targetVer)}')" style="width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, 0.04); border: 1px solid #282a20; color: #9fa197; font-weight: 700; font-size: 12px; padding: 11px 18px; border-radius: 12px; cursor: pointer; transition: background 0.15s ease;">
+                Remind Me Later
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      document.body.style.overflow = 'hidden';
     },
 
-    dismissMobileUpdate: function () {
+    dismissMobileUpdate: function (targetVer) {
+      try {
+        const cooldownKey = 'pixkit_update_cooldown_' + targetVer;
+        localStorage.setItem(cooldownKey, String(Date.now() + 86400000));
+      } catch (_) {}
       this.removeMobileUpdateDialog();
       this.removeForceUpdateOverlay();
     },
@@ -1200,22 +1167,49 @@
     },
 
     renderVersionCustomBanner: function (text) {
-      this.renderTopBanner({
-        id: 'version_custom_msg',
-        type: 'announcement',
-        icon: '⚡',
-        headline: '',
-        message: text,
-        dismissible: false
-      });
+      let banner = document.getElementById('pixkit-version-custom-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'pixkit-version-custom-banner';
+        banner.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 999990;
+          background: linear-gradient(90deg, #1b2e10 0%, #15220c 100%);
+          border-bottom: 1px solid #36501c;
+          color: #d7f36a;
+          padding: 8px 16px;
+          font-size: 11px;
+          font-weight: 700;
+          text-align: center;
+          font-family: -apple-system, BlinkMacSystemFont, "DM Sans", sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        `;
+        document.body.appendChild(banner);
+      }
+      banner.innerHTML = `<span>⚡</span> <span>${this.escapeHtml(text)}</span>`;
     },
 
     removeVersionCustomBanner: function () {
-      this.removeTopBanner();
+      const banner = document.getElementById('pixkit-version-custom-banner');
+      if (banner) banner.remove();
     },
 
-    renderForceUpdateOverlay: function () {
-      this.removeForceUpdateOverlay();
+    renderForceUpdateOverlay: function (policy, clientVersion, customTitle) {
+      const allowSkip = policy.allowSkip === true;
+      const notes = Array.isArray(policy.notes) ? policy.notes : (typeof policy.notes === 'string' ? policy.notes.split('\n') : ['Performance enhancements', 'Bug fixes']);
+      this.renderMobileUpdateDialog({
+        title: customTitle || policy.updateTitle || `PixKit ${policy.latestVersion || '1.0.3'} is Available`,
+        notes: notes,
+        targetVersion: policy.latestVersion || '1.0.3',
+        updateUrl: policy.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio',
+        allowSkip: allowSkip
+      });
     },
 
     removeForceUpdateOverlay: function () {
@@ -1228,24 +1222,59 @@
     },
 
     renderSoftUpdateToast: function (policy, clientVersion) {
-      this.renderTopBanner({
-        id: 'soft_update_' + (policy.latestVersion || '1.0.3'),
-        type: 'announcement',
-        icon: '🚀',
-        headline: `PixKit v${policy.latestVersion || '1.0.3'} Available`,
-        message: 'Update now for improved performance.',
-        actionLabel: 'Update',
-        actionUrl: policy.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio',
-        dismissible: true
-      });
+      let toast = document.getElementById('pixkit-soft-update-toast');
+      const latestVer = policy.latestVersion || '1.2.0';
+      const updateUrl = policy.updateUrl || 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
+
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'pixkit-soft-update-toast';
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          z-index: 999998;
+          background: #1A1C16;
+          color: #F2F3EC;
+          border: 1px solid #38BDF8;
+          padding: 14px 18px;
+          border-radius: 16px;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.65);
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          max-width: 420px;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        `;
+        document.body.appendChild(toast);
+      }
+
+      toast.innerHTML = `
+        <span style="font-size: 20px;">🚀</span>
+        <div style="flex: 1; line-height: 1.35;">
+          <div style="font-weight: 800; color: #FFFFFF;">PixKit v${this.escapeHtml(latestVer)} Available</div>
+          <div style="font-size: 11.5px; color: #9FA197;">Update now for improved performance.</div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <a href="${this.escapeHtml(updateUrl)}" target="_blank" style="background: #38BDF8; color: #0F172A; padding: 6px 14px; border-radius: 999px; text-decoration: none; font-size: 11.5px; font-weight: 800; white-space: nowrap;">Update</a>
+          <button onclick="PixKitRemote.dismissSoftUpdate('${this.escapeHtml(latestVer)}')" style="background:none; border:none; color:#71717A; cursor:pointer; font-size:16px; font-weight:800; padding:2px 6px;">&times;</button>
+        </div>
+      `;
     },
 
-    dismissSoftUpdate: function () {
-      this.removeTopBanner();
+    dismissSoftUpdate: function (latestVer) {
+      if (latestVer) {
+        try { sessionStorage.setItem('pixkit_dismissed_update_' + latestVer, 'true'); } catch (_) {}
+      }
+      this.removeSoftUpdateToast();
     },
 
     removeSoftUpdateToast: function () {
-      this.removeTopBanner();
+      const toast = document.getElementById('pixkit-soft-update-toast');
+      if (toast) toast.remove();
     },
 
     renderMaintenanceOverlay: function () {
@@ -1262,7 +1291,7 @@
         overlay.style.cssText = `
           position: fixed;
           inset: 0;
-          z-index: 999999999;
+          z-index: 99999999;
           background: rgba(18, 19, 16, 0.98);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
@@ -1273,15 +1302,9 @@
           justify-content: center;
           padding: 24px;
           text-align: center;
-          box-sizing: border-box;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         `;
-        const phone = document.getElementById('phone');
-        if (phone) {
-          phone.appendChild(overlay);
-        } else {
-          document.body.appendChild(overlay);
-        }
+        document.body.appendChild(overlay);
       }
 
       overlay.innerHTML = `
@@ -1312,134 +1335,96 @@
       }
     },
 
-    // Non-intrusive Top Banner for Updates, Master Kill-Switch (Retire), and Broadcasts
-    renderTopBanner: function (b) {
-      if (!b) {
-        this.removeTopBanner();
+    renderBroadcastBanner: function (b) {
+      if (!b || !b.enabled) {
+        this.removeBroadcastBanner();
         return;
       }
 
       // Platform targeting check: all, web, mobile
       if (b.targetPlatform && b.targetPlatform !== 'all' && b.targetPlatform !== this.platform) {
-        this.removeTopBanner();
+        this.removeBroadcastBanner();
         return;
       }
 
-      // Dismissal memory check for dismissible banners
-      const bannerKey = b.id || ((b.headline || '') + '_' + (b.message ? b.message.slice(0, 15) : ''));
+      // Dismissal memory check for this specific broadcast
+      const broadcastKey = b.id || ((b.headline || '') + '_' + (b.message ? b.message.slice(0, 15) : ''));
       if (b.dismissible !== false) {
         try {
-          if (sessionStorage.getItem('pixkit_dismissed_topbanner_' + bannerKey)) {
-            this.removeTopBanner();
+          if (sessionStorage.getItem('pixkit_dismissed_bc_' + broadcastKey)) {
+            this.removeBroadcastBanner();
             return;
           }
         } catch (_) {}
       }
 
-      // Themes
+      // Theme styling and defaults
       const themes = {
         announcement: { bg: '#D7F36A', color: '#121310', btnBg: '#121310', btnColor: '#FFFFFF', icon: '✨' },
         info:         { bg: '#38BDF8', color: '#0F172A', btnBg: '#0F172A', btnColor: '#FFFFFF', icon: 'ℹ️' },
         warning:      { bg: '#F59E0B', color: '#18181B', btnBg: '#18181B', btnColor: '#FFFFFF', icon: '🛠️' },
-        urgent:       { bg: 'linear-gradient(90deg, #DC2626 0%, #B91C1C 100%)', color: '#FFFFFF', btnBg: '#FFFFFF', btnColor: '#DC2626', icon: '🚨' },
+        urgent:       { bg: '#EF4444', color: '#FFFFFF', btnBg: '#FFFFFF', btnColor: '#EF4444', icon: '🚨' },
         purple:       { bg: '#A855F7', color: '#FFFFFF', btnBg: '#FFFFFF', btnColor: '#A855F7', icon: '💜' }
       };
 
       const theme = themes[b.type] || themes.announcement;
       const displayIcon = b.icon || theme.icon;
 
-      let banner = document.getElementById('pixkit-top-banner') || document.getElementById('pixkit-broadcast-banner');
+      let banner = document.getElementById('pixkit-broadcast-banner');
       if (!banner) {
         banner = document.createElement('div');
-        banner.id = 'pixkit-top-banner';
-        const phone = document.getElementById('phone');
-        const appbar = phone ? phone.querySelector('.appbar') : document.querySelector('.appbar');
-        if (appbar && appbar.parentNode) {
-          appbar.parentNode.insertBefore(banner, appbar.nextSibling);
-        } else if (phone) {
-          phone.prepend(banner);
-        } else {
-          document.body.prepend(banner);
-        }
+        banner.id = 'pixkit-broadcast-banner';
+        document.body.prepend(banner);
       }
 
-      const isInsidePhone = !!document.getElementById('phone');
       banner.style.cssText = `
-        position: ${isInsidePhone ? 'relative' : 'sticky'};
+        position: sticky;
         top: 0;
         left: 0;
         right: 0;
-        width: 100%;
-        box-sizing: border-box;
-        flex-shrink: 0;
         z-index: 999999;
         background: ${theme.bg};
         color: ${theme.color};
-        padding: 9px 14px;
+        padding: 10px 20px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        font-size: 11.5px;
+        justify-content: center;
+        gap: 12px;
+        font-size: 13px;
         font-weight: 700;
-        font-family: -apple-system, BlinkMacSystemFont, "DM Sans", "Segoe UI", Roboto, sans-serif;
-        box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.18);
         transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         flex-wrap: wrap;
       `;
 
       const safeHeadline = this.escapeHtml(b.headline || '');
       const safeMessage = this.escapeHtml(b.message || '');
-      const safeLabel = this.escapeHtml(b.actionLabel || 'Update via Google Play');
-      const safeUrl = b.actionUrl ? this.escapeHtml(b.actionUrl) : 'https://play.google.com/store/apps/details?id=com.pixkit.studio';
+      const safeLabel = this.escapeHtml(b.actionLabel || 'Learn More');
+      const safeUrl = b.actionUrl ? this.escapeHtml(b.actionUrl) : '';
 
       banner.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-          <span style="font-size: 15px; line-height: 1; flex-shrink: 0;">${displayIcon}</span>
-          <div style="line-height: 1.35; word-break: break-word;">
-            ${safeHeadline ? `<strong style="font-weight: 800; margin-right: 4px;">${safeHeadline}:</strong>` : ''}
-            <span>${safeMessage}</span>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
-          ${safeUrl ? `
-            <a href="${safeUrl}" target="_blank" onclick="PixKitRemote.handleOpenStore('${safeUrl}')" style="background: ${theme.btnBg}; color: ${theme.btnColor}; padding: 4px 12px; border-radius: 999px; text-decoration: none; font-size: 11px; font-weight: 800; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.25); display: inline-flex; align-items: center; gap: 4px; border: none; cursor: pointer; transition: opacity 0.15s ease;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-              ${safeLabel} &rarr;
-            </a>
-          ` : ''}
-          ${b.dismissible !== false ? `
-            <button type="button" onclick="PixKitRemote.dismissTopBanner('${bannerKey}')" style="background: none; border: none; cursor: pointer; font-weight: 900; font-size: 17px; line-height: 1; color: inherit; opacity: 0.75; padding: 0 4px;" title="Dismiss">&times;</button>
-          ` : ''}
-        </div>
+        <span style="font-size: 15px; line-height: 1;">${displayIcon}</span>
+        <span style="line-height: 1.4;">
+          ${safeHeadline ? `<strong style="font-weight: 800; margin-right: 4px;">${safeHeadline}:</strong>` : ''}
+          <span>${safeMessage}</span>
+        </span>
+        ${safeUrl ? `
+          <a href="${safeUrl}" style="background: ${theme.btnBg}; color: ${theme.btnColor}; padding: 4px 14px; border-radius: 999px; text-decoration: none; font-size: 11.5px; font-weight: 800; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.2); transition: opacity 0.15s ease;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+            ${safeLabel} &rarr;
+          </a>
+        ` : ''}
+        ${b.dismissible !== false ? `
+          <button onclick="PixKitRemote.dismissBroadcast('${broadcastKey}')" style="background: none; border: none; cursor: pointer; font-weight: 900; font-size: 18px; margin-left: 6px; line-height: 1; color: inherit; opacity: 0.75; padding: 0 4px;" title="Dismiss">&times;</button>
+        ` : ''}
       `;
     },
 
-    dismissTopBanner: function (key) {
-      if (key) {
-        try { sessionStorage.setItem('pixkit_dismissed_topbanner_' + key, 'true'); } catch (_) {}
-      }
-      this.removeTopBanner();
-      // Re-evaluate: if there is a general broadcast enabled and not retired, show it
-      if (this.state && this.state.broadcast && this.state.broadcast.enabled && !this.isVersionRetired()) {
-        this.renderTopBanner(this.state.broadcast);
-      }
-    },
-
-    removeTopBanner: function () {
-      const banner = document.getElementById('pixkit-top-banner') || document.getElementById('pixkit-broadcast-banner');
-      if (banner) banner.remove();
-    },
-
-    renderBroadcastBanner: function (b) {
-      return this.renderTopBanner(b);
-    },
-
     dismissBroadcast: function (key) {
-      return this.dismissTopBanner(key);
-    },
-
-    removeBroadcastBanner: function () {
-      return this.removeTopBanner();
+      if (key) {
+        try { sessionStorage.setItem('pixkit_dismissed_bc_' + key, 'true'); } catch (_) {}
+      }
+      this.removeBroadcastBanner();
     },
 
     escapeHtml: function (str) {
