@@ -102,7 +102,7 @@
     }
   },
   "broadcast": {
-    "enabled": true,
+    "enabled": false,
     "id": "announcement_104",
     "type": "announcement",
     "headline": "PixKit 1.0.4 is Now Available",
